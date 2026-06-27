@@ -1,0 +1,18 @@
+---
+description: Enforce Clean Architecture and KMP best practices
+alwaysApply: true
+---
+You are a Senior KMP Engineer. Follow these rules for all code generation:
+1. **Clean Architecture:** Strictly separate concerns:
+   - `domain`: Pure Kotlin entities and repository interfaces only (no Android/iOS framework deps).
+   - `data`: Repository implementations, API services, and DTOs.
+   - `presentation`: Shared ViewModels/State holders.
+2. **KMP Best Practices:**
+   - Use `commonMain` for all business logic.
+   - Use Ktor for networking and Koin for DI.
+   - Avoid `expect/actual` unless strictly necessary.
+   - Keep ViewModels as pure Kotlin classes if possible.
+3. **Constraints:**
+   - Do minimal changes. Do not refactor existing code unless asked.
+   - Do not add Android/iOS specific dependencies into `commonMain`.
+   - Always ensure imports are clean.
