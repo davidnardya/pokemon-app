@@ -19,16 +19,17 @@ struct PokemonListView: View {
             if let selectedPokemon = viewModel.uiState.selectedPokemon {
                 PokemonDetailView(
                     pokemon: selectedPokemon,
+                    uiState: viewModel.uiState,
                     onBack: viewModel.closePokemonDetail
                 )
             } else {
                 mainList
             }
         }
-        .alert("Team Full", isPresented: $viewModel.showTeamFullError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Your team is full (max 6 Pokémon)")
+        .overlay {
+            if viewModel.uiState.showTeamFullDialog {
+                FullTeamDialogView(onClose: viewModel.closeTeamFullDialog)
+            }
         }
         .sheet(isPresented: settingsBinding) {
             SettingsDrawerView(
@@ -74,6 +75,7 @@ struct PokemonListView: View {
                 onPokemonTap: viewModel.selectPokemonTab,
                 onTeamTap: viewModel.selectTeamTab
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
     }
 
@@ -86,9 +88,12 @@ struct PokemonListView: View {
             Spacer()
 
             Button(action: viewModel.openSettings) {
-                NamedAssetImage(name: PokemonAssets.settings(isDark: isDark))
-                    .frame(width: 24, height: 24)
-                    .frame(width: 48, height: 48)
+                Image(PokemonAssets.settings(isDark: isDark))
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 28, height: 28)
+                    .padding(10)
                     .background(colors.settingsButtonBackground)
                     .clipShape(Circle())
             }
@@ -102,28 +107,12 @@ struct PokemonListView: View {
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.uiState.isLoading && viewModel.uiState.pokemonArray.isEmpty {
-            loadingSpinner
-        } else if viewModel.uiState.networkError && viewModel.uiState.pokemonArray.isEmpty {
-            errorEmptyState
-        } else {
+        PokemonLoadingView(
+            uiState: viewModel.uiState,
+            isDark: isDark
+        ) {
             pokemonGrid
         }
-    }
-
-    private var loadingSpinner: some View {
-        SpinningPokeballView()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.bottom, 88)
-    }
-
-    private var errorEmptyState: some View {
-        Image(PokemonAssets.loadingList(isDark: isDark))
-            .resizable()
-            .scaledToFit()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 88)
     }
 
     private var pokemonGrid: some View {
@@ -157,7 +146,7 @@ struct PokemonListView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 100)
+            .padding(.bottom, IOSBottomNavigationMetrics.contentBottomInset)
         }
         .onChange(of: viewModel.uiState.isLoading) { _, isLoading in
             if !isLoading && isNearListEnd {
@@ -180,26 +169,6 @@ struct PokemonListView: View {
         let state = viewModel.uiState
         guard state.selectedTabIsPokemon, !state.isLoading, state.hasMore else { return }
         viewModel.loadNextPage()
-    }
-}
-
-private struct SpinningPokeballView: View {
-    @State private var isAnimating = false
-
-    var body: some View {
-        Image(PokemonAssets.loadingPokeball)
-            .renderingMode(.original)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 64, height: 64)
-            .rotationEffect(.degrees(isAnimating ? 360 : 0))
-            .animation(
-                .linear(duration: 1).repeatForever(autoreverses: false),
-                value: isAnimating
-            )
-            .onAppear {
-                isAnimating = true
-            }
     }
 }
 

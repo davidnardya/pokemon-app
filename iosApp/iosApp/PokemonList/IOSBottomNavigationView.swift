@@ -1,8 +1,19 @@
 import SwiftUI
 import SharedLogic
 
+enum IOSBottomNavigationMetrics {
+    /// Bottom scroll inset so list items are not obscured by the floating switch.
+    static let contentBottomInset: CGFloat = 80
+
+    static let containerWidth: CGFloat = 300
+    static let containerHeight: CGFloat = 50
+}
+
+private let bottomNavigationSelectionID = "bottomNavigationSelection"
+
 struct IOSBottomNavigationView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Namespace private var selectionNamespace
 
     let selectedTab: NavigationTab
     let onPokemonTap: () -> Void
@@ -17,31 +28,42 @@ struct IOSBottomNavigationView: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            navigationItem(
-                title: "Pokemon",
-                iconName: PokemonAssets.pokemonTabIcon(
-                    isDark: isDark,
-                    isSelected: selectedTab == .pokemon
-                ),
-                isSelected: selectedTab == .pokemon,
-                action: onPokemonTap
-            )
+        ZStack {
+            Capsule()
+                .fill(colors.navigationBarBackground)
 
-            navigationItem(
-                title: "Team",
-                iconName: PokemonAssets.teamTabIcon(
-                    isDark: isDark,
-                    isSelected: selectedTab == .team
-                ),
-                isSelected: selectedTab == .team,
-                action: onTeamTap
-            )
+            HStack(spacing: 0) {
+                navigationItem(
+                    title: "Pokemon",
+                    iconName: PokemonAssets.pokemonTabIcon(
+                        isDark: isDark,
+                        isSelected: selectedTab == .pokemon
+                    ),
+                    isSelected: selectedTab == .pokemon,
+                    action: onPokemonTap
+                )
+
+                navigationItem(
+                    title: "Team",
+                    iconName: PokemonAssets.teamTabIcon(
+                        isDark: isDark,
+                        isSelected: selectedTab == .team
+                    ),
+                    isSelected: selectedTab == .team,
+                    action: onTeamTap
+                )
+            }
+            .padding(6)
         }
-        .padding(6)
-        .background(colors.navigationBarBackground)
+        .frame(maxWidth: IOSBottomNavigationMetrics.containerWidth)
+        .frame(height: IOSBottomNavigationMetrics.containerHeight)
+        .animation(.easeInOut(duration: 0.25), value: selectedTab)
         .clipShape(Capsule())
-        .shadow(color: Color.black.opacity(isDark ? 0.35 : 0.12), radius: 16, y: 4)
+        .shadow(
+            color: Color.black.opacity(isDark ? 0.35 : 0.12),
+            radius: 16,
+            y: 4
+        )
         .padding(.horizontal, 48)
         .padding(.bottom, 8)
     }
@@ -53,21 +75,30 @@ struct IOSBottomNavigationView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                NamedAssetImage(name: iconName)
-                    .frame(width: 24, height: 24)
+            ZStack {
+                if isSelected {
+                    Capsule()
+                        .fill(colors.navigationIndicator)
+                        .matchedGeometryEffect(
+                            id: bottomNavigationSelectionID,
+                            in: selectionNamespace
+                        )
+                }
 
-                Text(title)
-                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(colors.navigationContent)
+                VStack(spacing: 4) {
+                    NamedAssetImage(name: iconName)
+                        .frame(width: 24, height: 24)
+
+                    Text(title)
+                        .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                        .foregroundStyle(colors.navigationContent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .padding(.vertical, 4)
+                .padding(.horizontal, 8)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .background(
-                Capsule()
-                    .fill(isSelected ? colors.navigationIndicator : Color.clear)
-            )
         }
         .buttonStyle(.plain)
     }

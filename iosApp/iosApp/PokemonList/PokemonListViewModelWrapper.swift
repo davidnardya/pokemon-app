@@ -4,11 +4,9 @@ import SharedLogic
 @MainActor
 final class PokemonListViewModelWrapper: ObservableObject {
     @Published private(set) var uiState: PokemonListState
-    @Published var showTeamFullError = false
 
     private let viewModel: PokemonViewModel
     private var cancelObservation: (() -> Void)?
-    private var cancelSideEffects: (() -> Void)?
 
     init() {
         KoinHelper.shared.start()
@@ -21,17 +19,10 @@ final class PokemonListViewModelWrapper: ObservableObject {
                 self?.uiState = state
             }
         }
-
-        cancelSideEffects = viewModel.watchTeamFullError { [weak self] in
-            Task { @MainActor in
-                self?.showTeamFullError = true
-            }
-        }
     }
 
     deinit {
         cancelObservation?()
-        cancelSideEffects?()
     }
 
     func loadInitialList() {
@@ -84,6 +75,10 @@ final class PokemonListViewModelWrapper: ObservableObject {
 
     func toggleTheme() {
         viewModel.toggleTheme()
+    }
+
+    func closeTeamFullDialog() {
+        viewModel.closeTeamFullDialog()
     }
 
     func isInTeam(pokemonId: Int32) -> Bool {

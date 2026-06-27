@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -36,19 +36,21 @@ import ui.theme.PokemonCardTheme
 @Composable
 fun PokemonDetailScreen(
     pokemon: Pokemon,
+    isLoading: Boolean,
+    networkError: Boolean,
+    isCacheEmpty: Boolean,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val colors = rememberPokemonListColors(isDarkTheme)
-    val usesDistinctImageSurface = PokemonCardTheme.usesDistinctImageSurface
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = colors.screenBackground,
-        contentWindowInsets = WindowInsets.statusBars,
         topBar = {
             TopAppBar(
+                modifier = Modifier.statusBarsPadding(),
                 title = {
                     Text(
                         text = pokemon.displayName(),
@@ -71,58 +73,80 @@ fun PokemonDetailScreen(
                     containerColor = colors.screenBackground,
                     scrolledContainerColor = colors.screenBackground,
                 ),
-                windowInsets = WindowInsets.statusBars,
+                windowInsets = WindowInsets(0, 0, 0, 0),
             )
         },
     ) { innerPadding ->
-        Column(
+        PokemonLoadingView(
+            isLoading = isLoading,
+            networkError = networkError,
+            isCacheEmpty = isCacheEmpty,
+            isDarkTheme = isDarkTheme,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(innerPadding),
         ) {
-            Box(
+            PokemonDetailContent(
+                pokemon = pokemon,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(PokemonCardTheme.containerColor)
-                    .then(
-                        if (usesDistinctImageSurface) {
-                            Modifier.padding(8.dp)
-                        } else {
-                            Modifier
-                        },
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                AsyncImage(
-                    model = pokemonImageUrl(pokemon.id),
-                    contentDescription = pokemon.name,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentScale = ContentScale.Fit,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = pokemon.displayName(),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-            )
-
-            Text(
-                text = pokemon.formattedId(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun PokemonDetailContent(
+    pokemon: Pokemon,
+    modifier: Modifier = Modifier,
+) {
+    val usesDistinctImageSurface = PokemonCardTheme.usesDistinctImageSurface
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(24.dp))
+                .background(PokemonCardTheme.containerColor)
+                .then(
+                    if (usesDistinctImageSurface) {
+                        Modifier.padding(8.dp)
+                    } else {
+                        Modifier
+                    },
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            AsyncImage(
+                model = pokemonImageUrl(pokemon.id),
+                contentDescription = pokemon.name,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentScale = ContentScale.Fit,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = pokemon.displayName(),
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+        )
+
+        Text(
+            text = pokemon.formattedId(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 

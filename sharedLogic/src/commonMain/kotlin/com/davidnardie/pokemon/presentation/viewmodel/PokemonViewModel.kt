@@ -1,18 +1,14 @@
 package com.davidnardie.pokemon.presentation.viewmodel
 
 import com.davidnardie.pokemon.domain.repository.PokemonRepository
-import com.davidnardie.pokemon.presentation.effect.PokemonSideEffect
 import com.davidnardie.pokemon.presentation.intent.PokemonIntent
 import com.davidnardie.pokemon.presentation.state.PokemonListState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -24,9 +20,6 @@ class PokemonViewModel(
 
     private val _uiState = MutableStateFlow(PokemonListState())
     val uiState: StateFlow<PokemonListState> = _uiState.asStateFlow()
-
-    private val _sideEffects = MutableSharedFlow<PokemonSideEffect>()
-    val sideEffects: SharedFlow<PokemonSideEffect> = _sideEffects.asSharedFlow()
 
     fun processIntent(intent: PokemonIntent) {
         when (intent) {
@@ -50,6 +43,7 @@ class PokemonViewModel(
             PokemonIntent.ToggleTheme -> _uiState.update {
                 it.copy(settings = it.settings.copy(useDarkTheme = !it.settings.useDarkTheme))
             }
+            PokemonIntent.CloseTeamFullDialog -> _uiState.update { it.copy(showTeamFullDialog = false) }
         }
     }
 
@@ -67,9 +61,7 @@ class PokemonViewModel(
         }
 
         if (state.teamPokemonIds.size >= MAX_TEAM_SIZE) {
-            viewModelScope.launch {
-                _sideEffects.emit(PokemonSideEffect.ShowTeamFullError)
-            }
+            _uiState.update { it.copy(showTeamFullDialog = true) }
             return
         }
 

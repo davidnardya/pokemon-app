@@ -1,7 +1,6 @@
 package com.davidnardie.pokemon.presentation.viewmodel
 
 import com.davidnardie.pokemon.domain.model.Pokemon
-import com.davidnardie.pokemon.presentation.effect.PokemonSideEffect
 import com.davidnardie.pokemon.presentation.intent.PokemonIntent
 import com.davidnardie.pokemon.presentation.state.NavigationTab
 import com.davidnardie.pokemon.presentation.state.PokemonListState
@@ -20,26 +19,6 @@ fun PokemonViewModel.watchUiState(onState: (PokemonListState) -> Unit): () -> Un
     val job: Job = CoroutineScope(Dispatchers.Main).launch {
         uiState.collect { state ->
             onState(state)
-        }
-    }
-    return { job.cancel() }
-}
-
-fun PokemonViewModel.watchSideEffects(onEffect: (PokemonSideEffect) -> Unit): () -> Unit {
-    val job: Job = CoroutineScope(Dispatchers.Main).launch {
-        sideEffects.collect { effect ->
-            onEffect(effect)
-        }
-    }
-    return { job.cancel() }
-}
-
-fun PokemonViewModel.watchTeamFullError(onTeamFull: () -> Unit): () -> Unit {
-    val job: Job = CoroutineScope(Dispatchers.Main).launch {
-        sideEffects.collect { effect ->
-            if (effect is PokemonSideEffect.ShowTeamFullError) {
-                onTeamFull()
-            }
         }
     }
     return { job.cancel() }
@@ -87,4 +66,8 @@ fun PokemonViewModel.toggleTimeFormat() {
 
 fun PokemonViewModel.toggleTheme() {
     processIntent(PokemonIntent.ToggleTheme)
+}
+
+fun PokemonViewModel.closeTeamFullDialog() {
+    processIntent(PokemonIntent.CloseTeamFullDialog)
 }

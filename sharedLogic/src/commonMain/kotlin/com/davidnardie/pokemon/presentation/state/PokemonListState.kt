@@ -14,6 +14,7 @@ data class PokemonListState(
     val teamPokemonIds: List<Int> = emptyList(),
     val selectedPokemon: Pokemon? = null,
     val settings: AppSettings = AppSettings(),
+    val showTeamFullDialog: Boolean = false,
 ) {
     fun isInTeam(pokemonId: Int): Boolean = pokemonId in teamPokemonIds
 
@@ -21,4 +22,13 @@ data class PokemonListState(
         NavigationTab.Pokemon -> pokemon
         NavigationTab.Team -> teamPokemonIds.mapNotNull { id -> pokemon.find { it.id == id } }
     }
+
+    val isCacheEmpty: Boolean get() = pokemon.isEmpty()
+
+    fun shouldShowLoadingSpinner(): Boolean = isLoading && isCacheEmpty
+
+    fun shouldShowNetworkErrorEmpty(): Boolean = networkError && isCacheEmpty
+
+    fun shouldShowFullScreenLoadingState(): Boolean =
+        shouldShowLoadingSpinner() || shouldShowNetworkErrorEmpty()
 }

@@ -1,11 +1,6 @@
 package ui.pokemonlist
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,7 +34,6 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -47,18 +41,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.davidnardie.pokemon.domain.model.Pokemon
-import com.davidnardie.pokemon.presentation.effect.PokemonSideEffect
 import com.davidnardie.pokemon.presentation.intent.PokemonIntent
 import com.davidnardie.pokemon.presentation.state.NavigationTab
 import com.davidnardie.pokemon.presentation.state.PokemonListState
@@ -79,8 +72,6 @@ import pokemonapp.sharedui.generated.resources.ic_lightmode_switch_team_full
 import pokemonapp.sharedui.generated.resources.ic_loading_pokeball_orange
 import pokemonapp.sharedui.generated.resources.ic_pokeball_dark_grey
 import pokemonapp.sharedui.generated.resources.ic_pokeball_grey
-import pokemonapp.sharedui.generated.resources.img_darkmode_loading_list
-import pokemonapp.sharedui.generated.resources.img_lightmode_loading_list
 
 @Composable
 fun PokemonMainListScreen(
@@ -94,16 +85,6 @@ fun PokemonMainListScreen(
         viewModel.processIntent(PokemonIntent.LoadPokemonList())
     }
 
-    LaunchedEffect(viewModel) {
-        viewModel.sideEffects.collect { effect ->
-            when (effect) {
-                PokemonSideEffect.ShowTeamFullError -> {
-                    snackbarHostState.showSnackbar("Your team is full (max 6 Pokémon)")
-                }
-            }
-        }
-    }
-
     val selectedPokemon = uiState.selectedPokemon
     if (selectedPokemon != null) {
         BackHandler {
@@ -111,6 +92,9 @@ fun PokemonMainListScreen(
         }
         PokemonDetailScreen(
             pokemon = selectedPokemon,
+            isLoading = uiState.isLoading,
+            networkError = uiState.networkError,
+            isCacheEmpty = uiState.isCacheEmpty,
             onBackClick = { viewModel.processIntent(PokemonIntent.ClosePokemonDetail) },
             modifier = modifier,
         )
@@ -129,6 +113,7 @@ fun PokemonMainListScreen(
         onToggleMetricUnits = { viewModel.processIntent(PokemonIntent.ToggleMetricUnits) },
         onToggleTimeFormat = { viewModel.processIntent(PokemonIntent.ToggleTimeFormat) },
         onToggleTheme = { viewModel.processIntent(PokemonIntent.ToggleTheme) },
+        onCloseTeamFullDialog = { viewModel.processIntent(PokemonIntent.CloseTeamFullDialog) },
         modifier = modifier,
     )
 }
@@ -148,71 +133,68 @@ fun PokemonMainListContent(
     onToggleMetricUnits: () -> Unit = {},
     onToggleTimeFormat: () -> Unit = {},
     onToggleTheme: () -> Unit = {},
+    onCloseTeamFullDialog: () -> Unit = {},
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val colors = rememberPokemonListColors(isDarkTheme)
     val displayedPokemon = uiState.displayedPokemon()
     val showPagination = uiState.selectedTab == NavigationTab.Pokemon
+    val showFullScreenLoadingState = uiState.shouldShowFullScreenLoadingState()
 
     Box(modifier = modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            containerColor = colors.screenBackground,
-            contentWindowInsets = WindowInsets.statusBars,
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            topBar = {
-                PokemonListTopBar(
-                    title = if (uiState.selectedTab == NavigationTab.Team) "Team" else "Pokemon",
-                    isDarkTheme = isDarkTheme,
-                    colors = colors,
-                    onSettingsClick = onSettingsClick,
-                )
-            },
-            bottomBar = {
-                PokemonAndroidBottomNavigation(
-                    selectedTab = uiState.selectedTab,
-                    isDarkTheme = isDarkTheme,
-                    colors = colors,
-                    onTabSelected = onTabSelected,
-                )
-            },
-        ) { innerPadding ->
-            when {
-                uiState.isLoading && uiState.pokemon.isEmpty() -> {
-                    PokemonListLoadingSpinner(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                    )
-                }
-                uiState.networkError && uiState.pokemon.isEmpty() -> {
-                    PokemonListErrorEmpty(
-                        isDarkTheme = isDarkTheme,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                    )
-                }
-                else -> {
-                    PokemonGrid(
-                        pokemon = displayedPokemon,
-                        teamPokemonIds = uiState.teamPokemonIds,
+        if (showFullScreenLoadingState) {
+            PokemonLoadingView(
+                uiState = uiState,
+                isDarkTheme = isDarkTheme,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(colors.screenBackground),
+            ) {
+                // Shell hidden during initial load and network-error empty state.
+            }
+        } else {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                containerColor = colors.screenBackground,
+                contentWindowInsets = WindowInsets.statusBars,
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                topBar = {
+                    PokemonListTopBar(
+                        title = if (uiState.selectedTab == NavigationTab.Team) "Team" else "Pokemon",
                         isDarkTheme = isDarkTheme,
                         colors = colors,
-                        isLoading = uiState.isLoading,
-                        hasMore = uiState.hasMore && showPagination,
-                        onLoadNextPage = onLoadNextPage,
-                        onPokemonClick = onPokemonClick,
-                        onToggleTeam = onToggleTeam,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
+                        onSettingsClick = onSettingsClick,
                     )
-                }
+                },
+                bottomBar = {
+                    PokemonAndroidBottomNavigation(
+                        selectedTab = uiState.selectedTab,
+                        isDarkTheme = isDarkTheme,
+                        colors = colors,
+                        onTabSelected = onTabSelected,
+                    )
+                },
+            ) { innerPadding ->
+                val contentModifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+
+                PokemonGrid(
+                    pokemon = displayedPokemon,
+                    teamPokemonIds = uiState.teamPokemonIds,
+                    isDarkTheme = isDarkTheme,
+                    colors = colors,
+                    isLoading = uiState.isLoading,
+                    hasMore = uiState.hasMore && showPagination,
+                    onLoadNextPage = onLoadNextPage,
+                    onPokemonClick = onPokemonClick,
+                    onToggleTeam = onToggleTeam,
+                    modifier = contentModifier,
+                )
             }
         }
 
-        if (uiState.isSettingsVisible) {
+        if (uiState.isSettingsVisible && !showFullScreenLoadingState) {
             SettingsDrawer(
                 settings = uiState.settings,
                 onClose = onCloseSettings,
@@ -220,6 +202,10 @@ fun PokemonMainListContent(
                 onToggleTimeFormat = onToggleTimeFormat,
                 onToggleTheme = onToggleTheme,
             )
+        }
+
+        if (uiState.showTeamFullDialog) {
+            FullTeamDialog(onDismiss = onCloseTeamFullDialog)
         }
     }
 }
@@ -245,6 +231,7 @@ private fun PokemonListTopBar(
             IconButton(
                 onClick = onSettingsClick,
                 modifier = Modifier
+                    .padding(end = 16.dp)
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(colors.settingsButtonBackground),
@@ -336,55 +323,6 @@ private fun PokemonAndroidBottomNavigation(
                 unselectedTextColor = Color.Black,
                 indicatorColor = colors.navigationIndicator,
             ),
-        )
-    }
-}
-
-@Composable
-private fun PokemonListLoadingSpinner(
-    modifier: Modifier = Modifier,
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "pokeballSpin")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000, easing = LinearEasing),
-        ),
-        label = "pokeballRotation",
-    )
-
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
-    ) {
-        Image(
-            painter = painterResource(Res.drawable.ic_loading_pokeball_orange),
-            contentDescription = "Loading",
-            modifier = Modifier
-                .size(64.dp)
-                .graphicsLayer { rotationZ = rotation },
-        )
-    }
-}
-
-@Composable
-private fun PokemonListErrorEmpty(
-    isDarkTheme: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
-    ) {
-        Image(
-            painter = painterResource(
-                if (isDarkTheme) Res.drawable.img_darkmode_loading_list
-                else Res.drawable.img_lightmode_loading_list,
-            ),
-            contentDescription = "Unable to load Pokémon",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit,
         )
     }
 }

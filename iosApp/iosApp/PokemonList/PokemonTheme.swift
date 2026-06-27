@@ -33,7 +33,7 @@ struct PokemonListColors {
             primaryText: Color(red: 0.102, green: 0.102, blue: 0.102),
             secondaryText: Color(red: 0.557, green: 0.557, blue: 0.576),
             settingsButtonBackground: .white,
-            navigationBarBackground: .white,
+            navigationBarBackground: Color(red: 0.949, green: 0.949, blue: 0.969),
             navigationIndicator: Color(red: 0.890, green: 0.890, blue: 0.910),
             navigationContent: Color(red: 0.102, green: 0.102, blue: 0.102),
             cardContainer: .white,

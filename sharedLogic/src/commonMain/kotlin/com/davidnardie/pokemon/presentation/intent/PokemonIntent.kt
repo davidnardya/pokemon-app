@@ -34,4 +34,6 @@ sealed interface PokemonIntent {
     data object ToggleTimeFormat : PokemonIntent
 
     data object ToggleTheme : PokemonIntent
+
+    data object CloseTeamFullDialog : PokemonIntent
 }

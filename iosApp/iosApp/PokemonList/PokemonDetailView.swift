@@ -5,6 +5,7 @@ struct PokemonDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let pokemon: Pokemon
+    let uiState: PokemonListState
     let onBack: () -> Void
 
     private var colors: PokemonListColors {
@@ -17,37 +18,12 @@ struct PokemonDetailView: View {
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 24) {
-                AsyncImage(url: URL(string: PokemonImageURL.forId(pokemon.id))) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFit()
-                            .padding(16)
-                    default:
-                        ProgressView()
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1, contentMode: .fit)
-                .background(colors.cardContainer)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .padding(.horizontal, 24)
-
-                VStack(spacing: 4) {
-                    Text(pokemon.displayName)
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(colors.primaryText)
-
-                    Text(pokemon.formattedId)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(colors.secondaryText)
-                }
-
-                Spacer()
+            PokemonLoadingView(
+                uiState: uiState,
+                isDark: isDark
+            ) {
+                detailContent
             }
-            .padding(.top, 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(colors.screenBackground.ignoresSafeArea())
             .navigationTitle(pokemon.displayName)
@@ -69,11 +45,59 @@ struct PokemonDetailView: View {
         }
         .navigationViewStyle(.stack)
     }
+
+    private var detailContent: some View {
+        VStack(spacing: 24) {
+            AsyncImage(url: URL(string: PokemonImageURL.forId(pokemon.id))) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .padding(16)
+                default:
+                    Color.clear
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .aspectRatio(1, contentMode: .fit)
+            .background(colors.cardContainer)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .padding(.horizontal, 24)
+
+            VStack(spacing: 4) {
+                Text(pokemon.displayName)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(colors.primaryText)
+
+                Text(pokemon.formattedId)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(colors.secondaryText)
+            }
+
+            Spacer()
+        }
+        .padding(.top, 16)
+    }
 }
 
 #Preview {
     PokemonDetailView(
         pokemon: Pokemon(id: 1, name: "bulbasaur"),
+        uiState: PokemonListState(
+            isLoading: false,
+            pokemon: [],
+            offset: 0,
+            hasMore: true,
+            error: nil,
+            networkError: false,
+            selectedTab: .pokemon,
+            isSettingsVisible: false,
+            teamPokemonIds: [],
+            selectedPokemon: nil,
+            settings: AppSettings(useMetricUnits: true, use24HourTime: false, useDarkTheme: false),
+            showTeamFullDialog: false
+        ),
         onBack: {}
     )
 }
