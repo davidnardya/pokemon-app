@@ -1,49 +1,46 @@
 package com.davidnardie.pokemon
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
-
-import pokemonapp.sharedui.generated.resources.Res
-import pokemonapp.sharedui.generated.resources.compose_multiplatform
+import com.davidnardie.pokemon.domain.model.Pokemon
+import com.davidnardie.pokemon.presentation.state.AppSettings
+import com.davidnardie.pokemon.presentation.state.NavigationTab
+import com.davidnardie.pokemon.presentation.state.PokemonListState
+import com.davidnardie.pokemon.presentation.viewmodel.PokemonViewModel
+import org.koin.compose.koinInject
+import ui.pokemonlist.PokemonMainListContent
+import ui.pokemonlist.PokemonMainListScreen
+import ui.theme.PokemonAppTheme
 
 @Composable
-@Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
-            }
-        }
+    PokemonAppTheme {
+        val viewModel: PokemonViewModel = koinInject()
+        PokemonMainListScreen(viewModel = viewModel)
+    }
+}
+
+@Preview
+@Composable
+private fun PokemonMainListPreview() {
+    PokemonAppTheme {
+        PokemonMainListContent(
+            uiState = PokemonListState(
+                pokemon = listOf(
+                    Pokemon(id = 1, name = "bulbasaur"),
+                    Pokemon(id = 2, name = "ivysaur"),
+                    Pokemon(id = 3, name = "venusaur"),
+                    Pokemon(id = 4, name = "charmander"),
+                ),
+                selectedTab = NavigationTab.Pokemon,
+                teamPokemonIds = listOf(1),
+                settings = AppSettings(),
+            ),
+            onSettingsClick = {},
+            onTabSelected = {},
+            onLoadNextPage = {},
+            onPokemonClick = {},
+            onToggleTeam = {},
+        )
     }
 }

@@ -1,0 +1,15 @@
+{
+  "images" : [
+    {
+      "filename" : "ic_darkmode_switch_team_full.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
+  }
+}
