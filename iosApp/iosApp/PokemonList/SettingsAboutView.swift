@@ -1,4 +1,5 @@
 import SwiftUI
+import SharedLogic
 
 struct SettingsAboutView: View {
     let isDark: Bool
@@ -19,11 +20,7 @@ struct SettingsAboutView: View {
 
                 Spacer(minLength: 28)
 
-                Image("ic_logo")
-                    .renderingMode(.original)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 80, height: 80)
+                aboutAvatar
 
                 Spacer(minLength: 24)
 
@@ -55,6 +52,35 @@ struct SettingsAboutView: View {
         .background(colors.aboutBackground)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: Color.black.opacity(0.18), radius: 24, y: 12)
+    }
+
+    private var avatarPlaceholderBackground: Color {
+        isDark
+            ? Color(red: 0.227, green: 0.227, blue: 0.235)
+            : Color(red: 0.898, green: 0.898, blue: 0.918)
+    }
+
+    @ViewBuilder
+    private var aboutAvatar: some View {
+        AsyncImage(url: URL(string: AboutAvatarUrl.shared.IMAGE_URL)) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+            case .failure:
+                Image("ic_logo")
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(12)
+            default:
+                ProgressView()
+            }
+        }
+        .frame(width: 80, height: 80)
+        .background(avatarPlaceholderBackground)
+        .clipShape(Circle())
     }
 }
 
