@@ -9,6 +9,7 @@ import com.davidnardie.pokemon.presentation.util.TeamDateFormatter
 
 data class PokemonListState(
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val pokemon: List<Pokemon> = emptyList(),
     val offset: Int = 0,
     val hasMore: Boolean = true,

@@ -15,6 +15,11 @@ interface PokemonRepository {
      */
     suspend fun refresh(limit: Int, offset: Int): PokemonPage
 
+    /**
+     * Clears locally cached Pokémon list data and fetches the first page from the API.
+     */
+    suspend fun hardRefresh(limit: Int): PokemonPage
+
     suspend fun fetchPokemonTypes(pokemonId: Int): List<PokemonType>
 
     suspend fun fetchPokemonDetail(pokemonId: Int): PokemonDetail?

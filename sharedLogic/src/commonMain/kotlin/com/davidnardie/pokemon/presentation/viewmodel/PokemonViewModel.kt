@@ -36,6 +36,7 @@ class PokemonViewModel(
                 offset = intent.offset,
             )
             PokemonIntent.LoadNextPage -> loadNextPage()
+            PokemonIntent.RefreshPokemonList -> refreshPokemonList()
             PokemonIntent.OpenSettings -> _uiState.update { it.copy(isSettingsVisible = true) }
             PokemonIntent.CloseSettings -> _uiState.update {
                 it.copy(
@@ -223,10 +224,49 @@ class PokemonViewModel(
         }
     }
 
+    private fun refreshPokemonList() {
+        viewModelScope.launch {
+            val state = _uiState.value
+            if (state.isRefreshing || (state.isLoading && !state.isCacheEmpty)) {
+                return@launch
+            }
+
+            _uiState.update {
+                it.copy(isRefreshing = true, error = null, networkError = false)
+            }
+
+            try {
+                val page = repository.hardRefresh(limit = PAGE_SIZE)
+                _uiState.update {
+                    it.copy(
+                        isRefreshing = false,
+                        isLoading = false,
+                        pokemon = page.pokemon,
+                        offset = page.pokemon.size,
+                        hasMore = page.hasMore,
+                        networkError = page.isOffline,
+                        error = if (page.isOffline && page.pokemon.isEmpty()) OFFLINE_ERROR_MESSAGE else null,
+                        pokemonDetails = emptyMap(),
+                        pokemonTypes = emptyMap(),
+                    )
+                }
+                ensureTeamMemberTypes()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isRefreshing = false,
+                        networkError = false,
+                        error = e.message ?: "Failed to refresh Pokémon",
+                    )
+                }
+            }
+        }
+    }
+
     private fun loadNextPage() {
         viewModelScope.launch {
             val state = _uiState.value
-            if (state.isLoading || !state.hasMore) {
+            if (state.isLoading || state.isRefreshing || !state.hasMore) {
                 return@launch
             }
 

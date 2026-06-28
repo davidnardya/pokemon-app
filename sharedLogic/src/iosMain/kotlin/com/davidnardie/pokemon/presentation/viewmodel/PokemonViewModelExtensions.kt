@@ -51,6 +51,10 @@ fun PokemonViewModel.requestNextPage() {
     processIntent(PokemonIntent.LoadNextPage)
 }
 
+fun PokemonViewModel.refreshPokemonList() {
+    processIntent(PokemonIntent.RefreshPokemonList)
+}
+
 fun PokemonViewModel.openSettings() {
     processIntent(PokemonIntent.OpenSettings)
 }

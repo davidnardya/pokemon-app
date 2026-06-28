@@ -18,11 +18,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,11 +35,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -82,6 +83,7 @@ fun PokemonMainListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val pokemonListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         viewModel.processIntent(PokemonIntent.LoadPokemonList())
@@ -89,11 +91,38 @@ fun PokemonMainListScreen(
 
     val selectedPokemon = uiState.selectedPokemonOrNull()
     val selectedPokemonId = uiState.selectedPokemonId
-    if (selectedPokemonId != null) {
-        BackHandler {
-            viewModel.processIntent(PokemonIntent.ClosePokemonDetail)
-        }
-        Box(modifier = modifier.fillMaxSize()) {
+
+    Box(modifier = modifier.fillMaxSize()) {
+        PokemonMainListContent(
+            uiState = uiState,
+            pokemonListState = pokemonListState,
+            snackbarHostState = snackbarHostState,
+            onSettingsClick = { viewModel.processIntent(PokemonIntent.OpenSettings) },
+            onCloseSettings = { viewModel.processIntent(PokemonIntent.CloseSettings) },
+            onTabSelected = { tab -> viewModel.processIntent(PokemonIntent.SelectTab(tab)) },
+            onLoadNextPage = { viewModel.processIntent(PokemonIntent.LoadNextPage) },
+            onRefresh = { viewModel.processIntent(PokemonIntent.RefreshPokemonList) },
+            onPokemonClick = { pokemon -> viewModel.processIntent(PokemonIntent.OpenPokemonDetail(pokemon.id)) },
+            onToggleTeam = { pokemonId -> viewModel.processIntent(PokemonIntent.ToggleTeamMembership(pokemonId)) },
+            onToggleMetricUnits = { viewModel.processIntent(PokemonIntent.ToggleMetricUnits) },
+            onSetMetricUnits = { useMetric -> viewModel.processIntent(PokemonIntent.SetMetricUnits(useMetric)) },
+            onSetUse24HourTime = { use24Hour -> viewModel.processIntent(PokemonIntent.SetUse24HourTime(use24Hour)) },
+            onOpenModePicker = { viewModel.processIntent(PokemonIntent.OpenModePicker) },
+            onCloseModePicker = { viewModel.processIntent(PokemonIntent.CloseModePicker) },
+            onSelectThemeMode = { mode -> viewModel.processIntent(PokemonIntent.SelectThemeMode(mode)) },
+            onOpenAbout = { viewModel.processIntent(PokemonIntent.OpenAbout) },
+            onCloseAbout = { viewModel.processIntent(PokemonIntent.CloseAbout) },
+            onCloseTeamFullDialog = { viewModel.processIntent(PokemonIntent.CloseTeamFullDialog) },
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(if (selectedPokemonId == null) 1f else 0f),
+            isListInteractive = selectedPokemonId == null,
+        )
+
+        if (selectedPokemonId != null) {
+            BackHandler {
+                viewModel.processIntent(PokemonIntent.ClosePokemonDetail)
+            }
             if (selectedPokemon != null) {
                 PokemonDetailScreen(
                     pokemon = selectedPokemon,
@@ -135,29 +164,7 @@ fun PokemonMainListScreen(
                 )
             }
         }
-        return
     }
-
-    PokemonMainListContent(
-        uiState = uiState,
-        snackbarHostState = snackbarHostState,
-        onSettingsClick = { viewModel.processIntent(PokemonIntent.OpenSettings) },
-        onCloseSettings = { viewModel.processIntent(PokemonIntent.CloseSettings) },
-        onTabSelected = { tab -> viewModel.processIntent(PokemonIntent.SelectTab(tab)) },
-        onLoadNextPage = { viewModel.processIntent(PokemonIntent.LoadNextPage) },
-        onPokemonClick = { pokemon -> viewModel.processIntent(PokemonIntent.OpenPokemonDetail(pokemon.id)) },
-        onToggleTeam = { pokemonId -> viewModel.processIntent(PokemonIntent.ToggleTeamMembership(pokemonId)) },
-        onToggleMetricUnits = { viewModel.processIntent(PokemonIntent.ToggleMetricUnits) },
-        onSetMetricUnits = { useMetric -> viewModel.processIntent(PokemonIntent.SetMetricUnits(useMetric)) },
-        onSetUse24HourTime = { use24Hour -> viewModel.processIntent(PokemonIntent.SetUse24HourTime(use24Hour)) },
-        onOpenModePicker = { viewModel.processIntent(PokemonIntent.OpenModePicker) },
-        onCloseModePicker = { viewModel.processIntent(PokemonIntent.CloseModePicker) },
-        onSelectThemeMode = { mode -> viewModel.processIntent(PokemonIntent.SelectThemeMode(mode)) },
-        onOpenAbout = { viewModel.processIntent(PokemonIntent.OpenAbout) },
-        onCloseAbout = { viewModel.processIntent(PokemonIntent.CloseAbout) },
-        onCloseTeamFullDialog = { viewModel.processIntent(PokemonIntent.CloseTeamFullDialog) },
-        modifier = modifier,
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -167,7 +174,9 @@ fun PokemonMainListContent(
     onSettingsClick: () -> Unit,
     onTabSelected: (NavigationTab) -> Unit,
     onLoadNextPage: () -> Unit,
+    onRefresh: () -> Unit = {},
     modifier: Modifier = Modifier,
+    pokemonListState: LazyListState = rememberLazyListState(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onCloseSettings: () -> Unit = {},
     onPokemonClick: (Pokemon) -> Unit = {},
@@ -181,6 +190,7 @@ fun PokemonMainListContent(
     onOpenAbout: () -> Unit = {},
     onCloseAbout: () -> Unit = {},
     onCloseTeamFullDialog: () -> Unit = {},
+    isListInteractive: Boolean = true,
 ) {
     val isDarkTheme = isPokemonDarkTheme()
     val colors = rememberPokemonListColors(isDarkTheme)
@@ -193,73 +203,101 @@ fun PokemonMainListContent(
             PokemonLoadingView(
                 uiState = uiState,
                 isDarkTheme = isDarkTheme,
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = onRefresh,
                 modifier = Modifier
                     .fillMaxSize()
+                    .statusBarsPadding()
                     .background(colors.screenBackground),
             ) {
                 // Shell hidden during initial load only.
             }
         } else {
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                containerColor = colors.screenBackground,
-                contentWindowInsets = WindowInsets.statusBars,
-                snackbarHost = { SnackbarHost(snackbarHostState) },
-                topBar = {
-                    PokemonListTopBar(
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(colors.screenBackground),
+                ) {
+                    PokemonListHeader(
                         title = screenTitle(uiState),
                         isDarkTheme = isDarkTheme,
                         colors = colors,
                         onSettingsClick = onSettingsClick,
                     )
-                },
-                bottomBar = {
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                    ) {
+                        PokemonLoadingView(
+                            uiState = uiState,
+                            isDarkTheme = isDarkTheme,
+                            isRefreshing = uiState.isRefreshing,
+                            onRefresh = if (uiState.selectedTab == NavigationTab.Pokemon) onRefresh else null,
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                PullToRefreshBox(
+                                    isRefreshing = uiState.isRefreshing,
+                                    onRefresh = onRefresh,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .alpha(if (uiState.selectedTab == NavigationTab.Pokemon) 1f else 0f),
+                                ) {
+                                    PokemonGrid(
+                                        pokemon = displayedPokemon,
+                                        teamPokemonIds = uiState.teamPokemonIds,
+                                        isDarkTheme = isDarkTheme,
+                                        colors = colors,
+                                        isLoading = uiState.isLoading,
+                                        isRefreshing = uiState.isRefreshing,
+                                        hasMore = uiState.hasMore && showPagination,
+                                        isScrollEnabled = uiState.selectedTab == NavigationTab.Pokemon && isListInteractive,
+                                        listState = pokemonListState,
+                                        onLoadNextPage = onLoadNextPage,
+                                        onPokemonClick = onPokemonClick,
+                                        onToggleTeam = onToggleTeam,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                }
+
+                                if (uiState.selectedTab == NavigationTab.Team) {
+                                    TeamListContent(
+                                        teamItems = uiState.teamPokemonItems(),
+                                        teamCount = uiState.teamCount,
+                                        isDarkTheme = isDarkTheme,
+                                        colors = colors,
+                                        onRemoveFromTeam = onToggleTeam,
+                                        onAddMoreClick = { onTabSelected(NavigationTab.Pokemon) },
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .verticalScroll(rememberScrollState()),
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     PokemonAndroidBottomNavigation(
                         selectedTab = uiState.selectedTab,
                         isDarkTheme = isDarkTheme,
                         colors = colors,
                         onTabSelected = onTabSelected,
                     )
-                },
-            ) { innerPadding ->
-                val contentModifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-
-                PokemonLoadingView(
-                    uiState = uiState,
-                    isDarkTheme = isDarkTheme,
-                    modifier = contentModifier,
-                ) {
-                    if (uiState.selectedTab == NavigationTab.Team) {
-                        TeamListContent(
-                            teamItems = uiState.teamPokemonItems(),
-                            teamCount = uiState.teamCount,
-                            isDarkTheme = isDarkTheme,
-                            colors = colors,
-                            onRemoveFromTeam = onToggleTeam,
-                            onAddMoreClick = { onTabSelected(NavigationTab.Pokemon) },
-                            modifier = Modifier.verticalScroll(rememberScrollState()),
-                        )
-                    } else {
-                        PokemonGrid(
-                            pokemon = displayedPokemon,
-                            teamPokemonIds = uiState.teamPokemonIds,
-                            isDarkTheme = isDarkTheme,
-                            colors = colors,
-                            isLoading = uiState.isLoading,
-                            hasMore = uiState.hasMore && showPagination,
-                            onLoadNextPage = onLoadNextPage,
-                            onPokemonClick = onPokemonClick,
-                            onToggleTeam = onToggleTeam,
-                            modifier = Modifier,
-                        )
-                    }
                 }
+
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 80.dp),
+                )
             }
         }
 
-        if (uiState.isSettingsVisible && !showInitialLoadingSpinner) {
+        if (uiState.isSettingsVisible && !showInitialLoadingSpinner && isListInteractive) {
             SettingsDrawer(
                 settings = uiState.settings,
                 isModePickerVisible = uiState.isModePickerVisible,
@@ -286,49 +324,48 @@ private fun screenTitle(uiState: PokemonListState): String = when (uiState.selec
     NavigationTab.Pokemon -> "Pokemon"
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PokemonListTopBar(
+private fun PokemonListHeader(
     title: String,
     isDarkTheme: Boolean,
     colors: PokemonListColors,
     onSettingsClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    TopAppBar(
-        title = {
-            Text(
-                text = title,
-                color = colors.primaryText,
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Bold,
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .background(colors.screenBackground)
+            .padding(horizontal = 20.dp)
+            .padding(top = 8.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            color = colors.primaryText,
+            fontSize = 34.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(
+            onClick = onSettingsClick,
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(colors.settingsButtonBackground),
+        ) {
+            Icon(
+                painter = painterResource(
+                    if (isDarkTheme) Res.drawable.ic_darkmode_settings
+                    else Res.drawable.ic_lightmode_settings,
+                ),
+                contentDescription = "Settings",
+                tint = Color.Unspecified,
+                modifier = Modifier.size(24.dp),
             )
-        },
-        actions = {
-            IconButton(
-                onClick = onSettingsClick,
-                modifier = Modifier
-                    .padding(end = 16.dp)
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(colors.settingsButtonBackground),
-            ) {
-                Icon(
-                    painter = painterResource(
-                        if (isDarkTheme) Res.drawable.ic_darkmode_settings
-                        else Res.drawable.ic_lightmode_settings,
-                    ),
-                    contentDescription = "Settings",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = colors.screenBackground,
-            scrolledContainerColor = colors.screenBackground,
-        ),
-        windowInsets = WindowInsets.statusBars,
-    )
+        }
+    }
 }
 
 @Composable
@@ -341,6 +378,7 @@ private fun PokemonAndroidBottomNavigation(
     NavigationBar(
         containerColor = colors.navigationBarBackground,
         tonalElevation = 0.dp,
+        windowInsets = WindowInsets.navigationBars,
     ) {
         NavigationBarItem(
             selected = selectedTab == NavigationTab.Pokemon,
@@ -410,26 +448,29 @@ private fun PokemonGrid(
     isDarkTheme: Boolean,
     colors: PokemonListColors,
     isLoading: Boolean,
+    isRefreshing: Boolean,
     hasMore: Boolean,
+    listState: LazyListState,
     onLoadNextPage: () -> Unit,
     onPokemonClick: (Pokemon) -> Unit,
     onToggleTeam: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    isScrollEnabled: Boolean = true,
 ) {
     val rows = pokemon.chunked(2)
-    val listState = rememberLazyListState()
     val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
 
-    LaunchedEffect(lastVisibleItemIndex, rows.size, isLoading, hasMore) {
-        if (lastVisibleItemIndex >= rows.size - 1 && !isLoading && hasMore) {
+    LaunchedEffect(lastVisibleItemIndex, rows.size, isLoading, isRefreshing, hasMore, isScrollEnabled) {
+        if (!isScrollEnabled) return@LaunchedEffect
+        if (lastVisibleItemIndex >= rows.size - 1 && !isLoading && !isRefreshing && hasMore) {
             onLoadNextPage()
         }
     }
-
     LazyColumn(
         state = listState,
         modifier = modifier,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        userScrollEnabled = isScrollEnabled,
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(

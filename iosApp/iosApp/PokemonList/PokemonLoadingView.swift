@@ -6,17 +6,20 @@ struct PokemonLoadingView<Content: View>: View {
     let networkError: Bool
     let isCacheEmpty: Bool
     let isDark: Bool
+    let onRefresh: (() async -> Void)?
     @ViewBuilder let content: () -> Content
 
     init(
         uiState: PokemonListState,
         isDark: Bool,
+        onRefresh: (() async -> Void)? = nil,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.isLoading = uiState.isLoading
         self.networkError = uiState.networkError
         self.isCacheEmpty = uiState.isCacheEmpty
         self.isDark = isDark
+        self.onRefresh = onRefresh
         self.content = content
     }
 
@@ -25,27 +28,52 @@ struct PokemonLoadingView<Content: View>: View {
         networkError: Bool,
         isCacheEmpty: Bool,
         isDark: Bool,
+        onRefresh: (() async -> Void)? = nil,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.isLoading = isLoading
         self.networkError = networkError
         self.isCacheEmpty = isCacheEmpty
         self.isDark = isDark
+        self.onRefresh = onRefresh
         self.content = content
     }
 
     var body: some View {
         if isLoading && isCacheEmpty {
-            SpinningPokeballView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            refreshableEmptyState {
+                SpinningPokeballView()
+            }
         } else if networkError && isCacheEmpty {
-            Image(PokemonAssets.loadingList(isDark: isDark))
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, 16)
+            refreshableEmptyState {
+                Image(PokemonAssets.loadingList(isDark: isDark))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.horizontal, 16)
+            }
         } else {
             content()
+        }
+    }
+
+    @ViewBuilder
+    private func refreshableEmptyState<EmptyContent: View>(
+        @ViewBuilder _ emptyContent: @escaping () -> EmptyContent
+    ) -> some View {
+        if let onRefresh {
+            GeometryReader { geometry in
+                ScrollView {
+                    emptyContent()
+                        .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+                }
+                .refreshable {
+                    await onRefresh()
+                }
+            }
+        } else {
+            emptyContent()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

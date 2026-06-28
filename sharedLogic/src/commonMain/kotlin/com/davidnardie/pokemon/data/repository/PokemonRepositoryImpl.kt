@@ -29,6 +29,11 @@ class PokemonRepositoryImpl(
             entities.map { it.toDomain() }
         }
 
+    override suspend fun hardRefresh(limit: Int): PokemonPage {
+        dao.deleteAll()
+        return refresh(limit = limit, offset = 0)
+    }
+
     override suspend fun refresh(limit: Int, offset: Int): PokemonPage {
         return try {
             val response = httpClient.get(POKEMON_LIST_URL) {

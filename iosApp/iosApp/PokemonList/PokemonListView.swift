@@ -5,6 +5,7 @@ struct PokemonListView: View {
     @StateObject private var viewModel = PokemonListViewModelWrapper()
     @State private var isNearListEnd = false
     @State private var showAboutPopup = false
+    @State private var pokemonScrollPosition = ScrollPosition(edge: .top)
     @Environment(\.colorScheme) private var systemColorScheme
 
     private var themeMode: ThemeMode {
@@ -59,7 +60,11 @@ struct PokemonListView: View {
     }
 
     private var appContent: some View {
-        Group {
+        ZStack {
+            mainList
+                .opacity(viewModel.uiState.selectedPokemonId == nil ? 1 : 0)
+                .allowsHitTesting(viewModel.uiState.selectedPokemonId == nil)
+
             if let selectedPokemonId = viewModel.uiState.selectedPokemonId?.int32Value {
                 if let selectedPokemon = viewModel.uiState.selectedPokemonOrNull() {
                     PokemonDetailView(
@@ -79,8 +84,6 @@ struct PokemonListView: View {
                         onBack: viewModel.closePokemonDetail
                     )
                 }
-            } else {
-                mainList
             }
         }
         .overlay {
@@ -175,12 +178,19 @@ struct PokemonListView: View {
     private var content: some View {
         PokemonLoadingView(
             uiState: viewModel.uiState,
-            isDark: isDark
+            isDark: isDark,
+            onRefresh: viewModel.uiState.selectedTabIsPokemon
+                ? { await viewModel.refreshPokemonListAsync() }
+                : nil
         ) {
-            if viewModel.uiState.selectedTabIsTeam {
-                teamList
-            } else {
+            ZStack {
                 pokemonGrid
+                    .opacity(viewModel.uiState.selectedTabIsPokemon ? 1 : 0)
+                    .allowsHitTesting(viewModel.uiState.selectedTabIsPokemon)
+
+                if viewModel.uiState.selectedTabIsTeam {
+                    teamList
+                }
             }
         }
     }
@@ -227,6 +237,11 @@ struct PokemonListView: View {
             .padding(.top, 8)
             .padding(.bottom, IOSBottomNavigationMetrics.contentBottomInset)
         }
+        .scrollPosition($pokemonScrollPosition)
+        .scrollDisabled(!viewModel.uiState.selectedTabIsPokemon)
+        .refreshable {
+            await viewModel.refreshPokemonListAsync()
+        }
         .onChange(of: viewModel.uiState.isLoading) { _, isLoading in
             if !isLoading && isNearListEnd {
                 loadNextPageIfNeeded()
@@ -246,7 +261,7 @@ struct PokemonListView: View {
 
     private func loadNextPageIfNeeded() {
         let state = viewModel.uiState
-        guard state.selectedTabIsPokemon, !state.isLoading, state.hasMore else { return }
+        guard state.selectedTabIsPokemon, !state.isLoading, !state.isRefreshing, state.hasMore else { return }
         viewModel.loadNextPage()
     }
 }

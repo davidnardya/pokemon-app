@@ -52,6 +52,7 @@ private fun PokemonMainListPreview() {
             onSettingsClick = {},
             onTabSelected = {},
             onLoadNextPage = {},
+            onRefresh = {},
             onPokemonClick = {},
             onToggleTeam = {},
         )

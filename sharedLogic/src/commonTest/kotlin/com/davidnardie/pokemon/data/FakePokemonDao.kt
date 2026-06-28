@@ -16,4 +16,8 @@ class FakePokemonDao : PokemonDao {
     override fun getAllPokemon(): Flow<List<PokemonEntity>> = pokemon.asStateFlow()
 
     override suspend fun getAllPokemonSync(): List<PokemonEntity> = pokemon.value
+
+    override suspend fun deleteAll() {
+        pokemon.value = emptyList()
+    }
 }

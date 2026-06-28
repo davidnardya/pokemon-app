@@ -11,6 +11,8 @@ sealed interface PokemonIntent {
 
     data object LoadNextPage : PokemonIntent
 
+    data object RefreshPokemonList : PokemonIntent
+
     data object OpenSettings : PokemonIntent
 
     data object CloseSettings : PokemonIntent

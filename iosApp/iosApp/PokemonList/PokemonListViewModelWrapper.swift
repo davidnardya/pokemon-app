@@ -37,6 +37,17 @@ final class PokemonListViewModelWrapper: ObservableObject {
         viewModel.requestNextPage()
     }
 
+    func refreshPokemonList() {
+        viewModel.refreshPokemonList()
+    }
+
+    func refreshPokemonListAsync() async {
+        refreshPokemonList()
+        while uiState.isRefreshing {
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+    }
+
     func openSettings() {
         viewModel.openSettings()
     }

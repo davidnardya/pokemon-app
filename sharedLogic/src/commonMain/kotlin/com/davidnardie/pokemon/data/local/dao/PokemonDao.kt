@@ -16,4 +16,7 @@ interface PokemonDao {
 
     @Query("SELECT * FROM pokemon ORDER BY id ASC")
     suspend fun getAllPokemonSync(): List<PokemonEntity>
+
+    @Query("DELETE FROM pokemon")
+    suspend fun deleteAll()
 }
