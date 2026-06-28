@@ -186,10 +186,10 @@ fun PokemonMainListContent(
     val colors = rememberPokemonListColors(isDarkTheme)
     val displayedPokemon = uiState.displayedPokemon()
     val showPagination = uiState.selectedTab == NavigationTab.Pokemon
-    val showFullScreenLoadingState = uiState.shouldShowFullScreenLoadingState()
+    val showInitialLoadingSpinner = uiState.shouldShowLoadingSpinner()
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (showFullScreenLoadingState) {
+        if (showInitialLoadingSpinner) {
             PokemonLoadingView(
                 uiState = uiState,
                 isDarkTheme = isDarkTheme,
@@ -197,7 +197,7 @@ fun PokemonMainListContent(
                     .fillMaxSize()
                     .background(colors.screenBackground),
             ) {
-                // Shell hidden during initial load and network-error empty state.
+                // Shell hidden during initial load only.
             }
         } else {
             Scaffold(
@@ -226,34 +226,40 @@ fun PokemonMainListContent(
                     .fillMaxSize()
                     .padding(innerPadding)
 
-                if (uiState.selectedTab == NavigationTab.Team) {
-                    TeamListContent(
-                        teamItems = uiState.teamPokemonItems(),
-                        teamCount = uiState.teamCount,
-                        isDarkTheme = isDarkTheme,
-                        colors = colors,
-                        onRemoveFromTeam = onToggleTeam,
-                        onAddMoreClick = { onTabSelected(NavigationTab.Pokemon) },
-                        modifier = contentModifier.verticalScroll(rememberScrollState()),
-                    )
-                } else {
-                    PokemonGrid(
-                        pokemon = displayedPokemon,
-                        teamPokemonIds = uiState.teamPokemonIds,
-                        isDarkTheme = isDarkTheme,
-                        colors = colors,
-                        isLoading = uiState.isLoading,
-                        hasMore = uiState.hasMore && showPagination,
-                        onLoadNextPage = onLoadNextPage,
-                        onPokemonClick = onPokemonClick,
-                        onToggleTeam = onToggleTeam,
-                        modifier = contentModifier,
-                    )
+                PokemonLoadingView(
+                    uiState = uiState,
+                    isDarkTheme = isDarkTheme,
+                    modifier = contentModifier,
+                ) {
+                    if (uiState.selectedTab == NavigationTab.Team) {
+                        TeamListContent(
+                            teamItems = uiState.teamPokemonItems(),
+                            teamCount = uiState.teamCount,
+                            isDarkTheme = isDarkTheme,
+                            colors = colors,
+                            onRemoveFromTeam = onToggleTeam,
+                            onAddMoreClick = { onTabSelected(NavigationTab.Pokemon) },
+                            modifier = Modifier.verticalScroll(rememberScrollState()),
+                        )
+                    } else {
+                        PokemonGrid(
+                            pokemon = displayedPokemon,
+                            teamPokemonIds = uiState.teamPokemonIds,
+                            isDarkTheme = isDarkTheme,
+                            colors = colors,
+                            isLoading = uiState.isLoading,
+                            hasMore = uiState.hasMore && showPagination,
+                            onLoadNextPage = onLoadNextPage,
+                            onPokemonClick = onPokemonClick,
+                            onToggleTeam = onToggleTeam,
+                            modifier = Modifier,
+                        )
+                    }
                 }
             }
         }
 
-        if (uiState.isSettingsVisible && !showFullScreenLoadingState) {
+        if (uiState.isSettingsVisible && !showInitialLoadingSpinner) {
             SettingsDrawer(
                 settings = uiState.settings,
                 isModePickerVisible = uiState.isModePickerVisible,
@@ -360,8 +366,8 @@ private fun PokemonAndroidBottomNavigation(
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = colors.navigationSelectedContent,
                 unselectedIconColor = colors.navigationUnselectedContent,
-                selectedTextColor = Color.Black,
-                unselectedTextColor = Color.Black,
+                selectedTextColor = colors.navigationSelectedContent,
+                unselectedTextColor = colors.navigationUnselectedContent,
                 indicatorColor = colors.navigationIndicator,
             ),
         )
@@ -389,8 +395,8 @@ private fun PokemonAndroidBottomNavigation(
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = colors.navigationSelectedContent,
                 unselectedIconColor = colors.navigationUnselectedContent,
-                selectedTextColor = Color.Black,
-                unselectedTextColor = Color.Black,
+                selectedTextColor = colors.navigationSelectedContent,
+                unselectedTextColor = colors.navigationUnselectedContent,
                 indicatorColor = colors.navigationIndicator,
             ),
         )

@@ -69,8 +69,7 @@ data class PokemonListState(
 
     fun shouldShowNetworkErrorEmpty(): Boolean = networkError && isCacheEmpty
 
-    fun shouldShowFullScreenLoadingState(): Boolean =
-        shouldShowLoadingSpinner() || shouldShowNetworkErrorEmpty()
+    fun shouldShowFullScreenLoadingState(): Boolean = shouldShowLoadingSpinner()
 
     companion object {
         const val MAX_TEAM_SIZE = 6
