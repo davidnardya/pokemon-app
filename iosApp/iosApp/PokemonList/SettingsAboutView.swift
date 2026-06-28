@@ -51,7 +51,7 @@ struct SettingsAboutView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 20)
-        .frame(maxWidth: 320)
+        .frame(width: 320)
         .background(colors.aboutBackground)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: Color.black.opacity(0.18), radius: 24, y: 12)

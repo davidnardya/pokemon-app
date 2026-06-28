@@ -4,6 +4,7 @@ import SharedLogic
 struct PokemonListView: View {
     @StateObject private var viewModel = PokemonListViewModelWrapper()
     @State private var isNearListEnd = false
+    @State private var showAboutPopup = false
     @Environment(\.colorScheme) private var systemColorScheme
 
     private var themeMode: ThemeMode {
@@ -26,13 +27,58 @@ struct PokemonListView: View {
     }
 
     var body: some View {
-        Group {
-            if let selectedPokemon = viewModel.uiState.selectedPokemon {
-                PokemonDetailView(
-                    pokemon: selectedPokemon,
-                    uiState: viewModel.uiState,
-                    onBack: viewModel.closePokemonDetail
+        ZStack {
+            appContent
+
+            if viewModel.uiState.isSettingsVisible {
+                settingsDrawerLayer
+            }
+
+            if showAboutPopup {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture { showAboutPopup = false }
+            }
+
+            if showAboutPopup {
+                SettingsAboutView(
+                    isDark: isDark,
+                    onClose: { showAboutPopup = false }
                 )
+                .frame(width: 320)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            }
+        }
+        .preferredColorScheme(ThemeAppearance.preferredColorScheme(for: themeMode))
+        .animation(.easeInOut(duration: 0.25), value: viewModel.uiState.isSettingsVisible)
+        .onAppear {
+            if viewModel.uiState.pokemonArray.isEmpty && !viewModel.uiState.isLoading {
+                viewModel.loadInitialList()
+            }
+        }
+    }
+
+    private var appContent: some View {
+        Group {
+            if let selectedPokemonId = viewModel.uiState.selectedPokemonId?.int32Value {
+                if let selectedPokemon = viewModel.uiState.selectedPokemonOrNull() {
+                    PokemonDetailView(
+                        pokemon: selectedPokemon,
+                        detail: viewModel.uiState.detailForPokemon(pokemonId: selectedPokemonId),
+                        isDetailLoading: viewModel.uiState.isDetailLoading,
+                        detailLoadFailed: viewModel.uiState.detailLoadFailed,
+                        useMetricUnits: viewModel.uiState.settings.useMetricUnits,
+                        themeMode: themeMode,
+                        onBack: viewModel.closePokemonDetail,
+                        onSettings: viewModel.openSettings
+                    )
+                } else {
+                    PokemonDetailErrorView(
+                        message: "This Pokémon is no longer available in the list.",
+                        themeMode: themeMode,
+                        onBack: viewModel.closePokemonDetail
+                    )
+                }
             } else {
                 mainList
             }
@@ -42,46 +88,35 @@ struct PokemonListView: View {
                 FullTeamDialogView(onClose: viewModel.closeTeamFullDialog)
             }
         }
-        .overlay {
-            if viewModel.uiState.isAboutVisible {
-                ZStack {
-                    Color.black.opacity(0.45)
-                        .ignoresSafeArea()
-                        .onTapGesture(perform: viewModel.closeAbout)
-
-                    SettingsAboutView(
-                        isDark: isDark,
-                        onClose: viewModel.closeAbout
-                    )
-                }
-            }
-        }
-        .sheet(isPresented: settingsBinding) {
-            SettingsDrawerView(
-                viewModel: viewModel,
-                systemColorScheme: systemColorScheme
-            )
-            .preferredColorScheme(ThemeAppearance.preferredColorScheme(for: themeMode))
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.hidden)
-        }
-        .preferredColorScheme(ThemeAppearance.preferredColorScheme(for: themeMode))
-        .onAppear {
-            if viewModel.uiState.pokemonArray.isEmpty && !viewModel.uiState.isLoading {
-                viewModel.loadInitialList()
-            }
-        }
     }
 
-    private var settingsBinding: Binding<Bool> {
-        Binding(
-            get: { viewModel.uiState.isSettingsVisible },
-            set: { isVisible in
-                if !isVisible {
-                    viewModel.closeSettings()
-                }
+    private var settingsDrawerLayer: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture { viewModel.closeSettings() }
+
+                SettingsDrawerView(
+                    viewModel: viewModel,
+                    systemColorScheme: systemColorScheme,
+                    onAboutTap: { showAboutPopup = true }
+                )
+                .preferredColorScheme(ThemeAppearance.preferredColorScheme(for: themeMode))
+                .frame(maxWidth: .infinity)
+                .frame(height: geometry.size.height * 0.5)
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 20,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: 20,
+                        style: .continuous
+                    )
+                )
             }
-        )
+        }
+        .ignoresSafeArea()
     }
 
     private var mainList: some View {

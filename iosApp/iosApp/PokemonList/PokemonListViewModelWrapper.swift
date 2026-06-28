@@ -149,7 +149,35 @@ extension PokemonListState {
         Array(toTeamPokemonItemsArray())
     }
 
+    func detail(for pokemonId: Int32) -> PokemonDetail? {
+        detailForPokemon(pokemonId: pokemonId)
+    }
+
     var teamIds: [Int32] {
         teamPokemonIds.map { $0.int32Value }
+    }
+}
+
+extension PokemonDetail {
+    var typesArray: [PokemonType] {
+        Array(toTypesArray())
+    }
+
+    var statsArray: [PokemonStatEntry] {
+        Array(toStatsArray())
+    }
+
+    var abilitiesArray: [String] {
+        Array(toAbilitiesArray())
+    }
+}
+
+extension PokemonStatEntry {
+    var displayValue: Int32 {
+        statValue()
+    }
+
+    var displayLabel: String {
+        statLabel()
     }
 }

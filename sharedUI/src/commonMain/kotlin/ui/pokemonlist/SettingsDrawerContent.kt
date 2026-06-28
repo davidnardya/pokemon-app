@@ -2,17 +2,22 @@ package ui.pokemonlist
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -22,6 +27,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -56,8 +63,17 @@ import ui.theme.isPokemonDarkTheme
 private val PillShape = RoundedCornerShape(percent = 50)
 private val SettingsContentHorizontalPadding = 20.dp
 private val ModePickerEndMargin = 16.dp
+private val SettingsRowMinHeight = 48.dp
 // Handle + header + unit row + divider + time row + divider + mode row
 private val ModePickerTopOffset = 170.dp
+
+@Composable
+private fun Modifier.settingsClickable(onClick: () -> Unit): Modifier =
+    clickable(
+        interactionSource = remember { MutableInteractionSource() },
+        indication = null,
+        onClick = onClick,
+    )
 
 @Composable
 internal fun SettingsDrawerContent(
@@ -175,7 +191,7 @@ internal fun SettingsDrawerContent(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .clickable(onClick = onCloseModePicker)
+                    .settingsClickable(onCloseModePicker)
                     .zIndex(1f),
             )
             ModePickerView(
@@ -213,6 +229,7 @@ private fun SettingsUnitRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = SettingsRowMinHeight)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -230,13 +247,17 @@ private fun SettingsUnitRow(
             color = colors.primaryText,
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.wrapContentWidth(unbounded = false),
         )
+        Spacer(modifier = Modifier.weight(1f))
         UnitSegmentedControl(
             useMetricUnits = useMetricUnits,
             isDarkTheme = isDarkTheme,
             colors = colors,
             onSetMetricUnits = onSetMetricUnits,
+            modifier = Modifier.widthIn(max = 188.dp),
         )
     }
 }
@@ -247,10 +268,12 @@ private fun UnitSegmentedControl(
     isDarkTheme: Boolean,
     colors: SettingsColors,
     onSetMetricUnits: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .height(36.dp)
+            .wrapContentWidth(unbounded = false)
             .clip(PillShape)
             .background(colors.segmentBackground)
             .padding(3.dp),
@@ -262,6 +285,7 @@ private fun UnitSegmentedControl(
             isDarkTheme = isDarkTheme,
             colors = colors,
             onClick = { onSetMetricUnits(true) },
+            modifier = Modifier.weight(1f),
         )
         UnitSegmentOption(
             label = "Imperial",
@@ -269,6 +293,7 @@ private fun UnitSegmentedControl(
             isDarkTheme = isDarkTheme,
             colors = colors,
             onClick = { onSetMetricUnits(false) },
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -280,6 +305,7 @@ private fun UnitSegmentOption(
     isDarkTheme: Boolean,
     colors: SettingsColors,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val selectedBackgroundModifier = if (selected) {
         Modifier
@@ -295,10 +321,10 @@ private fun UnitSegmentOption(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
+            .fillMaxHeight()
             .then(selectedBackgroundModifier)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
+            .settingsClickable(onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -306,6 +332,8 @@ private fun UnitSegmentOption(
             color = if (selected) colors.primaryText else colors.secondaryText,
             fontSize = 14.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)),
         )
     }
@@ -323,6 +351,8 @@ private fun SettingsSwitchRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = SettingsRowMinHeight)
+            .settingsClickable { onCheckedChange(!checked) }
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -342,7 +372,7 @@ private fun SettingsSwitchRow(
         )
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = null,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
                 checkedTrackColor = if (isDarkTheme) Color(0xFF39393D) else Color(0xFF34C759),
@@ -370,7 +400,8 @@ private fun SettingsNavigationRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .heightIn(min = SettingsRowMinHeight)
+            .settingsClickable(onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

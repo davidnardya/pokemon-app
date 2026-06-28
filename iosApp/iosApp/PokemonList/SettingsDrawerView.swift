@@ -4,6 +4,7 @@ import SharedLogic
 struct SettingsDrawerView: View {
     @ObservedObject var viewModel: PokemonListViewModelWrapper
     let systemColorScheme: ColorScheme
+    let onAboutTap: () -> Void
 
     private var settings: AppSettings {
         viewModel.uiState.settings
@@ -102,8 +103,11 @@ struct SettingsDrawerView: View {
             Text("Unit")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(colors.primaryText)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
 
-            Spacer()
+            Spacer(minLength: 8)
 
             UnitSegmentedControl(
                 useMetricUnits: settings.useMetricUnits,
@@ -111,37 +115,54 @@ struct SettingsDrawerView: View {
                 colors: colors,
                 onSetMetricUnits: viewModel.setMetricUnits(useMetric:)
             )
+            .layoutPriority(0)
+            .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Unit")
+        .accessibilityValue(settings.useMetricUnits ? "Metric" : "Imperial")
     }
 
     private var timeRow: some View {
-        HStack(spacing: 12) {
-            Image(PokemonAssets.settingsClock(isDark: isDark))
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 24, height: 24)
+        Button {
+            viewModel.setUse24HourTime(use24HourTime: !settings.use24HourTime)
+        } label: {
+            HStack(spacing: 12) {
+                Image(PokemonAssets.settingsClock(isDark: isDark))
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 24, height: 24)
 
-            Text("24-Hour Time")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(colors.primaryText)
+                Text("24-Hour Time")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(colors.primaryText)
 
-            Spacer()
+                Spacer()
 
-            Toggle(
-                "",
-                isOn: Binding(
-                    get: { settings.use24HourTime },
-                    set: viewModel.setUse24HourTime(use24HourTime:)
+                Toggle(
+                    "",
+                    isOn: Binding(
+                        get: { settings.use24HourTime },
+                        set: viewModel.setUse24HourTime(use24HourTime:)
+                    )
                 )
-            )
-            .labelsHidden()
-            .tint(isDark ? Color(red: 0.224, green: 0.224, blue: 0.235) : Color(red: 0.204, green: 0.780, blue: 0.349))
+                .labelsHidden()
+                .tint(isDark ? Color(red: 0.224, green: 0.224, blue: 0.235) : Color(red: 0.204, green: 0.780, blue: 0.349))
+                .allowsHitTesting(false)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .buttonStyle(.plain)
+        .accessibilityLabel("24-Hour Time")
+        .accessibilityValue(settings.use24HourTime ? "On" : "Off")
+        .accessibilityHint("Toggles 24-hour time format")
     }
 
     private var modeRow: some View {
@@ -173,12 +194,17 @@ struct SettingsDrawerView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Mode")
+        .accessibilityValue(settings.themeMode.displayLabel())
+        .accessibilityHint("Opens theme mode picker")
     }
 
     private var aboutRow: some View {
-        Button(action: viewModel.openAbout) {
+        Button(action: onAboutTap) {
             HStack(spacing: 12) {
                 Image(PokemonAssets.settingsAbout(isDark: isDark))
                     .renderingMode(.original)
@@ -200,8 +226,12 @@ struct SettingsDrawerView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("About")
+        .accessibilityHint("Opens about information")
     }
 
     private var settingsDivider: some View {
@@ -228,6 +258,7 @@ private struct UnitSegmentedControl: View {
             }
         }
         .padding(3)
+        .frame(maxWidth: 188)
         .frame(height: 36)
         .background(colors.segmentBackground)
         .clipShape(Capsule())
@@ -238,8 +269,10 @@ private struct UnitSegmentedControl: View {
             Text(label)
                 .font(.system(size: 14, weight: selected ? .semibold : .medium))
                 .foregroundStyle(selected ? colors.primaryText : colors.secondaryText)
-                .padding(.horizontal, 14)
+                .lineLimit(1)
+                .padding(.horizontal, 12)
                 .padding(.vertical, 7)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(
                     Group {
                         if selected {
@@ -253,8 +286,11 @@ private struct UnitSegmentedControl: View {
                         }
                     }
                 )
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 }
 
@@ -322,6 +358,7 @@ extension ThemeMode {
 #Preview {
     SettingsDrawerView(
         viewModel: PokemonListViewModelWrapper(),
-        systemColorScheme: .light
+        systemColorScheme: .light,
+        onAboutTap: {}
     )
 }

@@ -87,19 +87,54 @@ fun PokemonMainListScreen(
         viewModel.processIntent(PokemonIntent.LoadPokemonList())
     }
 
-    val selectedPokemon = uiState.selectedPokemon
-    if (selectedPokemon != null) {
+    val selectedPokemon = uiState.selectedPokemonOrNull()
+    val selectedPokemonId = uiState.selectedPokemonId
+    if (selectedPokemonId != null) {
         BackHandler {
             viewModel.processIntent(PokemonIntent.ClosePokemonDetail)
         }
-        PokemonDetailScreen(
-            pokemon = selectedPokemon,
-            isLoading = uiState.isLoading,
-            networkError = uiState.networkError,
-            isCacheEmpty = uiState.isCacheEmpty,
-            onBackClick = { viewModel.processIntent(PokemonIntent.ClosePokemonDetail) },
-            modifier = modifier,
-        )
+        Box(modifier = modifier.fillMaxSize()) {
+            if (selectedPokemon != null) {
+                PokemonDetailScreen(
+                    pokemon = selectedPokemon,
+                    detail = uiState.findDetail(selectedPokemon.id),
+                    isDetailLoading = uiState.isDetailLoading,
+                    detailLoadFailed = uiState.detailLoadFailed,
+                    useMetricUnits = uiState.settings.useMetricUnits,
+                    onBackClick = { viewModel.processIntent(PokemonIntent.ClosePokemonDetail) },
+                    onSettingsClick = { viewModel.processIntent(PokemonIntent.OpenSettings) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                PokemonDetailErrorScreen(
+                    message = "This Pokémon is no longer available in the list.",
+                    onBackClick = { viewModel.processIntent(PokemonIntent.ClosePokemonDetail) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
+            if (uiState.isSettingsVisible) {
+                SettingsDrawer(
+                    settings = uiState.settings,
+                    isModePickerVisible = uiState.isModePickerVisible,
+                    isAboutVisible = uiState.isAboutVisible,
+                    onClose = { viewModel.processIntent(PokemonIntent.CloseSettings) },
+                    onSetMetricUnits = { useMetric ->
+                        viewModel.processIntent(PokemonIntent.SetMetricUnits(useMetric))
+                    },
+                    onSetUse24HourTime = { use24Hour ->
+                        viewModel.processIntent(PokemonIntent.SetUse24HourTime(use24Hour))
+                    },
+                    onOpenModePicker = { viewModel.processIntent(PokemonIntent.OpenModePicker) },
+                    onCloseModePicker = { viewModel.processIntent(PokemonIntent.CloseModePicker) },
+                    onSelectThemeMode = { mode ->
+                        viewModel.processIntent(PokemonIntent.SelectThemeMode(mode))
+                    },
+                    onOpenAbout = { viewModel.processIntent(PokemonIntent.OpenAbout) },
+                    onCloseAbout = { viewModel.processIntent(PokemonIntent.CloseAbout) },
+                )
+            }
+        }
         return
     }
 
@@ -110,7 +145,7 @@ fun PokemonMainListScreen(
         onCloseSettings = { viewModel.processIntent(PokemonIntent.CloseSettings) },
         onTabSelected = { tab -> viewModel.processIntent(PokemonIntent.SelectTab(tab)) },
         onLoadNextPage = { viewModel.processIntent(PokemonIntent.LoadNextPage) },
-        onPokemonClick = { pokemon -> viewModel.processIntent(PokemonIntent.OpenPokemonDetail(pokemon)) },
+        onPokemonClick = { pokemon -> viewModel.processIntent(PokemonIntent.OpenPokemonDetail(pokemon.id)) },
         onToggleTeam = { pokemonId -> viewModel.processIntent(PokemonIntent.ToggleTeamMembership(pokemonId)) },
         onToggleMetricUnits = { viewModel.processIntent(PokemonIntent.ToggleMetricUnits) },
         onSetMetricUnits = { useMetric -> viewModel.processIntent(PokemonIntent.SetMetricUnits(useMetric)) },

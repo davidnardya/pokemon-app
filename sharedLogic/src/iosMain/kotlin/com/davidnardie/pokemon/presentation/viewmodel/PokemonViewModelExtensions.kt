@@ -1,6 +1,9 @@
 package com.davidnardie.pokemon.presentation.viewmodel
 
 import com.davidnardie.pokemon.domain.model.Pokemon
+import com.davidnardie.pokemon.domain.model.PokemonDetail
+import com.davidnardie.pokemon.domain.model.PokemonStatEntry
+import com.davidnardie.pokemon.domain.model.PokemonType
 import com.davidnardie.pokemon.presentation.intent.PokemonIntent
 import com.davidnardie.pokemon.presentation.model.TeamPokemonItem
 import com.davidnardie.pokemon.presentation.state.NavigationTab
@@ -16,6 +19,18 @@ fun PokemonListState.toPokemonArray(): List<Pokemon> = pokemon.toList()
 fun PokemonListState.isPokemonInTeam(pokemonId: Int): Boolean = isInTeam(pokemonId)
 
 fun PokemonListState.toTeamPokemonItemsArray(): List<TeamPokemonItem> = teamPokemonItems()
+
+fun PokemonListState.detailForPokemon(pokemonId: Int): PokemonDetail? = findDetail(pokemonId)
+
+fun PokemonDetail.toTypesArray(): List<PokemonType> = types
+
+fun PokemonDetail.toStatsArray(): List<PokemonStatEntry> = stats
+
+fun PokemonDetail.toAbilitiesArray(): List<String> = abilities
+
+fun PokemonStatEntry.statValue(): Int = baseValue
+
+fun PokemonStatEntry.statLabel(): String = stat.label
 
 fun PokemonViewModel.currentUiState(): PokemonListState = uiState.value
 
@@ -53,7 +68,7 @@ fun PokemonViewModel.toggleTeamMembership(pokemonId: Int) {
 }
 
 fun PokemonViewModel.openPokemonDetail(pokemon: Pokemon) {
-    processIntent(PokemonIntent.OpenPokemonDetail(pokemon))
+    processIntent(PokemonIntent.OpenPokemonDetail(pokemonId = pokemon.id))
 }
 
 fun PokemonViewModel.closePokemonDetail() {

@@ -1,6 +1,5 @@
 package com.davidnardie.pokemon.presentation.intent
 
-import com.davidnardie.pokemon.domain.model.Pokemon
 import com.davidnardie.pokemon.presentation.state.NavigationTab
 import com.davidnardie.pokemon.presentation.state.ThemeMode
 
@@ -25,7 +24,7 @@ sealed interface PokemonIntent {
     ) : PokemonIntent
 
     data class OpenPokemonDetail(
-        val pokemon: Pokemon,
+        val pokemonId: Int,
     ) : PokemonIntent
 
     data object ClosePokemonDetail : PokemonIntent

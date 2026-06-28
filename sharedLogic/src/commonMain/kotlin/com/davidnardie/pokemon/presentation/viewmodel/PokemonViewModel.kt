@@ -51,8 +51,15 @@ class PokemonViewModel(
                 }
             }
             is PokemonIntent.ToggleTeamMembership -> toggleTeamMembership(intent.pokemonId)
-            is PokemonIntent.OpenPokemonDetail -> _uiState.update { it.copy(selectedPokemon = intent.pokemon) }
-            PokemonIntent.ClosePokemonDetail -> _uiState.update { it.copy(selectedPokemon = null) }
+            is PokemonIntent.OpenPokemonDetail -> openPokemonDetail(intent.pokemonId)
+            PokemonIntent.ClosePokemonDetail -> _uiState.update {
+                it.copy(
+                    selectedPokemon = null,
+                    selectedPokemonId = null,
+                    isDetailLoading = false,
+                    detailLoadFailed = false,
+                )
+            }
             PokemonIntent.ToggleMetricUnits -> updateSettings { settings ->
                 settings.copy(useMetricUnits = !settings.useMetricUnits)
             }
@@ -129,11 +136,58 @@ class PokemonViewModel(
 
     private fun fetchPokemonTypes(pokemonId: Int) {
         viewModelScope.launch {
-            val types = repository.fetchPokemonTypes(pokemonId)
-            if (types.isNotEmpty()) {
-                _uiState.update { current ->
-                    current.copy(pokemonTypes = current.pokemonTypes + (pokemonId to types))
-                }
+            val detail = repository.fetchPokemonDetail(pokemonId) ?: return@launch
+            _uiState.update { current ->
+                current.copy(
+                    pokemonTypes = current.pokemonTypes + (pokemonId to detail.types),
+                    pokemonDetails = current.pokemonDetails + (pokemonId to detail),
+                )
+            }
+        }
+    }
+
+    private fun openPokemonDetail(pokemonId: Int) {
+        val pokemon = _uiState.value.findPokemon(pokemonId)
+        if (pokemon == null) {
+            _uiState.update {
+                it.copy(
+                    selectedPokemon = null,
+                    selectedPokemonId = null,
+                    isDetailLoading = false,
+                    detailLoadFailed = false,
+                )
+            }
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                selectedPokemon = pokemon,
+                selectedPokemonId = pokemonId,
+                detailLoadFailed = false,
+            )
+        }
+        fetchPokemonDetail(pokemonId)
+    }
+
+    private fun fetchPokemonDetail(pokemonId: Int) {
+        if (_uiState.value.pokemonDetails.containsKey(pokemonId)) {
+            _uiState.update { it.copy(isDetailLoading = false, detailLoadFailed = false) }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDetailLoading = true, detailLoadFailed = false) }
+            val detail = repository.fetchPokemonDetail(pokemonId)
+            _uiState.update { current ->
+                current.copy(
+                    isDetailLoading = false,
+                    detailLoadFailed = detail == null,
+                    pokemonDetails = detail?.let { current.pokemonDetails + (pokemonId to it) }
+                        ?: current.pokemonDetails,
+                    pokemonTypes = detail?.let { current.pokemonTypes + (pokemonId to it.types) }
+                        ?: current.pokemonTypes,
+                )
             }
         }
     }

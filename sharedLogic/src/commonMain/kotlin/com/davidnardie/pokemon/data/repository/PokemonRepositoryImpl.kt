@@ -6,6 +6,7 @@ import com.davidnardie.pokemon.data.local.dao.PokemonDao
 import com.davidnardie.pokemon.data.mapper.toDomain
 import com.davidnardie.pokemon.data.mapper.toEntity
 import com.davidnardie.pokemon.domain.model.Pokemon
+import com.davidnardie.pokemon.domain.model.PokemonDetail
 import com.davidnardie.pokemon.domain.model.PokemonPage
 import com.davidnardie.pokemon.domain.model.PokemonType
 import com.davidnardie.pokemon.domain.repository.PokemonRepository
@@ -70,14 +71,16 @@ class PokemonRepositoryImpl(
     }
 
     override suspend fun fetchPokemonTypes(pokemonId: Int): List<PokemonType> {
+        return fetchPokemonDetail(pokemonId)?.types.orEmpty()
+    }
+
+    override suspend fun fetchPokemonDetail(pokemonId: Int): PokemonDetail? {
         return try {
             val response = httpClient.get("$POKEMON_DETAIL_URL$pokemonId")
                 .body<PokemonDetailDto>()
-            response.types.mapNotNull { slot ->
-                PokemonType.fromApiName(slot.type.name)
-            }
+            response.toDomain(pokemonId)
         } catch (_: Exception) {
-            emptyList()
+            null
         }
     }
 

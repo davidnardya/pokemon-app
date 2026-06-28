@@ -68,6 +68,18 @@ enum PokemonAssets {
     static func settingsRightArrow(isDark: Bool) -> String {
         isDark ? "ic_darkmode_right_arrow" : "ic_lightmode_right_arrow"
     }
+
+    static func weight(isDark: Bool) -> String {
+        isDark ? "ic_darkmode_weight" : "ic_lightmode_weight"
+    }
+
+    static func height(isDark: Bool) -> String {
+        isDark ? "ic_darkmode_height" : "ic_lightmode_height"
+    }
+
+    static func moves(isDark: Bool) -> String {
+        isDark ? "ic_darkmode_moves" : "ic_lightmode_moves"
+    }
 }
 
 struct ThemedAssetImage: View {
