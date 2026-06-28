@@ -4,7 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
+import ui.theme.isPokemonDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -111,8 +113,13 @@ fun PokemonMainListScreen(
         onPokemonClick = { pokemon -> viewModel.processIntent(PokemonIntent.OpenPokemonDetail(pokemon)) },
         onToggleTeam = { pokemonId -> viewModel.processIntent(PokemonIntent.ToggleTeamMembership(pokemonId)) },
         onToggleMetricUnits = { viewModel.processIntent(PokemonIntent.ToggleMetricUnits) },
-        onToggleTimeFormat = { viewModel.processIntent(PokemonIntent.ToggleTimeFormat) },
-        onToggleTheme = { viewModel.processIntent(PokemonIntent.ToggleTheme) },
+        onSetMetricUnits = { useMetric -> viewModel.processIntent(PokemonIntent.SetMetricUnits(useMetric)) },
+        onSetUse24HourTime = { use24Hour -> viewModel.processIntent(PokemonIntent.SetUse24HourTime(use24Hour)) },
+        onOpenModePicker = { viewModel.processIntent(PokemonIntent.OpenModePicker) },
+        onCloseModePicker = { viewModel.processIntent(PokemonIntent.CloseModePicker) },
+        onSelectThemeMode = { mode -> viewModel.processIntent(PokemonIntent.SelectThemeMode(mode)) },
+        onOpenAbout = { viewModel.processIntent(PokemonIntent.OpenAbout) },
+        onCloseAbout = { viewModel.processIntent(PokemonIntent.CloseAbout) },
         onCloseTeamFullDialog = { viewModel.processIntent(PokemonIntent.CloseTeamFullDialog) },
         modifier = modifier,
     )
@@ -131,11 +138,16 @@ fun PokemonMainListContent(
     onPokemonClick: (Pokemon) -> Unit = {},
     onToggleTeam: (Int) -> Unit = {},
     onToggleMetricUnits: () -> Unit = {},
-    onToggleTimeFormat: () -> Unit = {},
-    onToggleTheme: () -> Unit = {},
+    onSetMetricUnits: (Boolean) -> Unit = {},
+    onSetUse24HourTime: (Boolean) -> Unit = {},
+    onOpenModePicker: () -> Unit = {},
+    onCloseModePicker: () -> Unit = {},
+    onSelectThemeMode: (com.davidnardie.pokemon.presentation.state.ThemeMode) -> Unit = {},
+    onOpenAbout: () -> Unit = {},
+    onCloseAbout: () -> Unit = {},
     onCloseTeamFullDialog: () -> Unit = {},
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isPokemonDarkTheme()
     val colors = rememberPokemonListColors(isDarkTheme)
     val displayedPokemon = uiState.displayedPokemon()
     val showPagination = uiState.selectedTab == NavigationTab.Pokemon
@@ -160,7 +172,7 @@ fun PokemonMainListContent(
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 topBar = {
                     PokemonListTopBar(
-                        title = if (uiState.selectedTab == NavigationTab.Team) "Team" else "Pokemon",
+                        title = screenTitle(uiState),
                         isDarkTheme = isDarkTheme,
                         colors = colors,
                         onSettingsClick = onSettingsClick,
@@ -179,28 +191,46 @@ fun PokemonMainListContent(
                     .fillMaxSize()
                     .padding(innerPadding)
 
-                PokemonGrid(
-                    pokemon = displayedPokemon,
-                    teamPokemonIds = uiState.teamPokemonIds,
-                    isDarkTheme = isDarkTheme,
-                    colors = colors,
-                    isLoading = uiState.isLoading,
-                    hasMore = uiState.hasMore && showPagination,
-                    onLoadNextPage = onLoadNextPage,
-                    onPokemonClick = onPokemonClick,
-                    onToggleTeam = onToggleTeam,
-                    modifier = contentModifier,
-                )
+                if (uiState.selectedTab == NavigationTab.Team) {
+                    TeamListContent(
+                        teamItems = uiState.teamPokemonItems(),
+                        teamCount = uiState.teamCount,
+                        isDarkTheme = isDarkTheme,
+                        colors = colors,
+                        onRemoveFromTeam = onToggleTeam,
+                        onAddMoreClick = { onTabSelected(NavigationTab.Pokemon) },
+                        modifier = contentModifier.verticalScroll(rememberScrollState()),
+                    )
+                } else {
+                    PokemonGrid(
+                        pokemon = displayedPokemon,
+                        teamPokemonIds = uiState.teamPokemonIds,
+                        isDarkTheme = isDarkTheme,
+                        colors = colors,
+                        isLoading = uiState.isLoading,
+                        hasMore = uiState.hasMore && showPagination,
+                        onLoadNextPage = onLoadNextPage,
+                        onPokemonClick = onPokemonClick,
+                        onToggleTeam = onToggleTeam,
+                        modifier = contentModifier,
+                    )
+                }
             }
         }
 
         if (uiState.isSettingsVisible && !showFullScreenLoadingState) {
             SettingsDrawer(
                 settings = uiState.settings,
+                isModePickerVisible = uiState.isModePickerVisible,
+                isAboutVisible = uiState.isAboutVisible,
                 onClose = onCloseSettings,
-                onToggleMetricUnits = onToggleMetricUnits,
-                onToggleTimeFormat = onToggleTimeFormat,
-                onToggleTheme = onToggleTheme,
+                onSetMetricUnits = onSetMetricUnits,
+                onSetUse24HourTime = onSetUse24HourTime,
+                onOpenModePicker = onOpenModePicker,
+                onCloseModePicker = onCloseModePicker,
+                onSelectThemeMode = onSelectThemeMode,
+                onOpenAbout = onOpenAbout,
+                onCloseAbout = onCloseAbout,
             )
         }
 
@@ -208,6 +238,11 @@ fun PokemonMainListContent(
             FullTeamDialog(onDismiss = onCloseTeamFullDialog)
         }
     }
+}
+
+private fun screenTitle(uiState: PokemonListState): String = when (uiState.selectedTab) {
+    NavigationTab.Team -> "My Team (${uiState.teamCount}/${PokemonListState.MAX_TEAM_SIZE})"
+    NavigationTab.Pokemon -> "Pokemon"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

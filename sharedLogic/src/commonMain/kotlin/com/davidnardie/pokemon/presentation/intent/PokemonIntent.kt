@@ -2,6 +2,7 @@ package com.davidnardie.pokemon.presentation.intent
 
 import com.davidnardie.pokemon.domain.model.Pokemon
 import com.davidnardie.pokemon.presentation.state.NavigationTab
+import com.davidnardie.pokemon.presentation.state.ThemeMode
 
 sealed interface PokemonIntent {
     data class LoadPokemonList(
@@ -31,9 +32,27 @@ sealed interface PokemonIntent {
 
     data object ToggleMetricUnits : PokemonIntent
 
+    data class SetMetricUnits(
+        val useMetric: Boolean,
+    ) : PokemonIntent
+
     data object ToggleTimeFormat : PokemonIntent
 
-    data object ToggleTheme : PokemonIntent
+    data class SetUse24HourTime(
+        val use24HourTime: Boolean,
+    ) : PokemonIntent
+
+    data object OpenModePicker : PokemonIntent
+
+    data object CloseModePicker : PokemonIntent
+
+    data class SelectThemeMode(
+        val themeMode: ThemeMode,
+    ) : PokemonIntent
+
+    data object OpenAbout : PokemonIntent
+
+    data object CloseAbout : PokemonIntent
 
     data object CloseTeamFullDialog : PokemonIntent
 }

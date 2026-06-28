@@ -2,7 +2,7 @@ package ui.pokemonlist
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import ui.theme.isPokemonDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,7 +34,7 @@ fun FullTeamDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isPokemonDarkTheme()
     val colors = rememberFullTeamDialogColors(isDarkTheme)
 
     Dialog(onDismissRequest = onDismiss) {

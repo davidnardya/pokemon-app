@@ -1,11 +1,13 @@
 package com.davidnardie.pokemon.data.repository
 
+import com.davidnardie.pokemon.data.dto.PokemonDetailDto
 import com.davidnardie.pokemon.data.dto.PokemonResponseDto
 import com.davidnardie.pokemon.data.local.dao.PokemonDao
 import com.davidnardie.pokemon.data.mapper.toDomain
 import com.davidnardie.pokemon.data.mapper.toEntity
 import com.davidnardie.pokemon.domain.model.Pokemon
 import com.davidnardie.pokemon.domain.model.PokemonPage
+import com.davidnardie.pokemon.domain.model.PokemonType
 import com.davidnardie.pokemon.domain.repository.PokemonRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -67,7 +69,20 @@ class PokemonRepositoryImpl(
         return false
     }
 
+    override suspend fun fetchPokemonTypes(pokemonId: Int): List<PokemonType> {
+        return try {
+            val response = httpClient.get("$POKEMON_DETAIL_URL$pokemonId")
+                .body<PokemonDetailDto>()
+            response.types.mapNotNull { slot ->
+                PokemonType.fromApiName(slot.type.name)
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
     private companion object {
         const val POKEMON_LIST_URL = "https://pokeapi.co/api/v2/pokemon"
+        const val POKEMON_DETAIL_URL = "https://pokeapi.co/api/v2/pokemon/"
     }
 }

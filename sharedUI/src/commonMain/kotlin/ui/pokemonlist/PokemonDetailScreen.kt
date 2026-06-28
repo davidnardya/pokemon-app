@@ -1,7 +1,7 @@
 package ui.pokemonlist
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import ui.theme.isPokemonDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -42,7 +42,7 @@ fun PokemonDetailScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isPokemonDarkTheme()
     val colors = rememberPokemonListColors(isDarkTheme)
 
     Scaffold(

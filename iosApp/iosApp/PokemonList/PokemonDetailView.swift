@@ -2,18 +2,28 @@ import SwiftUI
 import SharedLogic
 
 struct PokemonDetailView: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorScheme) private var systemColorScheme
 
     let pokemon: Pokemon
     let uiState: PokemonListState
     let onBack: () -> Void
 
+    private var effectiveColorScheme: ColorScheme {
+        ThemeAppearance.effectiveColorScheme(
+            themeMode: uiState.settings.themeMode,
+            systemColorScheme: systemColorScheme
+        )
+    }
+
     private var colors: PokemonListColors {
-        PokemonListColors.current(for: colorScheme)
+        PokemonListColors.current(for: effectiveColorScheme)
     }
 
     private var isDark: Bool {
-        colorScheme == .dark
+        ThemeAppearance.isDark(
+            themeMode: uiState.settings.themeMode,
+            systemColorScheme: systemColorScheme
+        )
     }
 
     var body: some View {
@@ -93,9 +103,12 @@ struct PokemonDetailView: View {
             networkError: false,
             selectedTab: .pokemon,
             isSettingsVisible: false,
-            teamPokemonIds: [],
+            isModePickerVisible: false,
+            isAboutVisible: false,
+            teamMembers: [],
+            pokemonTypes: [:],
             selectedPokemon: nil,
-            settings: AppSettings(useMetricUnits: true, use24HourTime: false, useDarkTheme: false),
+            settings: AppSettings(useMetricUnits: true, use24HourTime: false, themeMode: .system),
             showTeamFullDialog: false
         ),
         onBack: {}

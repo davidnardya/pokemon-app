@@ -4,14 +4,25 @@ import SharedLogic
 struct PokemonListView: View {
     @StateObject private var viewModel = PokemonListViewModelWrapper()
     @State private var isNearListEnd = false
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorScheme) private var systemColorScheme
+
+    private var themeMode: ThemeMode {
+        viewModel.uiState.settings.themeMode
+    }
+
+    private var effectiveColorScheme: ColorScheme {
+        ThemeAppearance.effectiveColorScheme(
+            themeMode: themeMode,
+            systemColorScheme: systemColorScheme
+        )
+    }
 
     private var colors: PokemonListColors {
-        PokemonListColors.current(for: colorScheme)
+        PokemonListColors.current(for: effectiveColorScheme)
     }
 
     private var isDark: Bool {
-        colorScheme == .dark
+        ThemeAppearance.isDark(themeMode: themeMode, systemColorScheme: systemColorScheme)
     }
 
     var body: some View {
@@ -31,17 +42,30 @@ struct PokemonListView: View {
                 FullTeamDialogView(onClose: viewModel.closeTeamFullDialog)
             }
         }
+        .overlay {
+            if viewModel.uiState.isAboutVisible {
+                ZStack {
+                    Color.black.opacity(0.45)
+                        .ignoresSafeArea()
+                        .onTapGesture(perform: viewModel.closeAbout)
+
+                    SettingsAboutView(
+                        isDark: isDark,
+                        onClose: viewModel.closeAbout
+                    )
+                }
+            }
+        }
         .sheet(isPresented: settingsBinding) {
             SettingsDrawerView(
-                settings: viewModel.uiState.settings,
-                onClose: viewModel.closeSettings,
-                onToggleMetricUnits: viewModel.toggleMetricUnits,
-                onToggleTimeFormat: viewModel.toggleTimeFormat,
-                onToggleTheme: viewModel.toggleTheme
+                viewModel: viewModel,
+                systemColorScheme: systemColorScheme
             )
+            .preferredColorScheme(ThemeAppearance.preferredColorScheme(for: themeMode))
             .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
+            .presentationDragIndicator(.hidden)
         }
+        .preferredColorScheme(ThemeAppearance.preferredColorScheme(for: themeMode))
         .onAppear {
             if viewModel.uiState.pokemonArray.isEmpty && !viewModel.uiState.isLoading {
                 viewModel.loadInitialList()
@@ -81,7 +105,7 @@ struct PokemonListView: View {
 
     private var topBar: some View {
         HStack {
-            Text(viewModel.uiState.selectedTabIsTeam ? "Team" : "Pokemon")
+            Text(screenTitle)
                 .font(.system(size: 34, weight: .bold))
                 .foregroundStyle(colors.primaryText)
 
@@ -105,14 +129,34 @@ struct PokemonListView: View {
         .background(colors.screenBackground)
     }
 
+    private var screenTitle: String {
+        if viewModel.uiState.selectedTabIsTeam {
+            return "My Team (\(viewModel.uiState.teamCount)/\(PokemonListState.companion.MAX_TEAM_SIZE))"
+        }
+        return "Pokemon"
+    }
+
     @ViewBuilder
     private var content: some View {
         PokemonLoadingView(
             uiState: viewModel.uiState,
             isDark: isDark
         ) {
-            pokemonGrid
+            if viewModel.uiState.selectedTabIsTeam {
+                teamList
+            } else {
+                pokemonGrid
+            }
         }
+    }
+
+    private var teamList: some View {
+        TeamListView(
+            teamItems: viewModel.uiState.teamPokemonItemsArray,
+            teamCount: Int(viewModel.uiState.teamCount),
+            onRemoveFromTeam: viewModel.toggleTeamMembership(pokemonId:),
+            onAddMoreTap: viewModel.selectPokemonTab
+        )
     }
 
     private var pokemonGrid: some View {

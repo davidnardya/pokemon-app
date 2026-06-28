@@ -1,4 +1,43 @@
 import SwiftUI
+import SharedLogic
+
+enum ThemeAppearance {
+    static func effectiveColorScheme(
+        themeMode: ThemeMode,
+        systemColorScheme: ColorScheme
+    ) -> ColorScheme {
+        switch themeMode {
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        default:
+            return systemColorScheme
+        }
+    }
+
+    static func preferredColorScheme(for themeMode: ThemeMode) -> ColorScheme? {
+        switch themeMode {
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        default:
+            return nil
+        }
+    }
+
+    static func isDark(themeMode: ThemeMode, systemColorScheme: ColorScheme) -> Bool {
+        switch themeMode {
+        case .light:
+            return false
+        case .dark:
+            return true
+        default:
+            return systemColorScheme == .dark
+        }
+    }
+}
 
 struct PokemonListColors {
     let screenBackground: Color

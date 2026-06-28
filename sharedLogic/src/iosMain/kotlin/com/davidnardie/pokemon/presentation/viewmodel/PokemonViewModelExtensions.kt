@@ -2,7 +2,9 @@ package com.davidnardie.pokemon.presentation.viewmodel
 
 import com.davidnardie.pokemon.domain.model.Pokemon
 import com.davidnardie.pokemon.presentation.intent.PokemonIntent
+import com.davidnardie.pokemon.presentation.model.TeamPokemonItem
 import com.davidnardie.pokemon.presentation.state.NavigationTab
+import com.davidnardie.pokemon.presentation.state.ThemeMode
 import com.davidnardie.pokemon.presentation.state.PokemonListState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +14,8 @@ import kotlinx.coroutines.launch
 fun PokemonListState.toPokemonArray(): List<Pokemon> = pokemon.toList()
 
 fun PokemonListState.isPokemonInTeam(pokemonId: Int): Boolean = isInTeam(pokemonId)
+
+fun PokemonListState.toTeamPokemonItemsArray(): List<TeamPokemonItem> = teamPokemonItems()
 
 fun PokemonViewModel.currentUiState(): PokemonListState = uiState.value
 
@@ -64,8 +68,32 @@ fun PokemonViewModel.toggleTimeFormat() {
     processIntent(PokemonIntent.ToggleTimeFormat)
 }
 
-fun PokemonViewModel.toggleTheme() {
-    processIntent(PokemonIntent.ToggleTheme)
+fun PokemonViewModel.setMetricUnits(useMetric: Boolean) {
+    processIntent(PokemonIntent.SetMetricUnits(useMetric = useMetric))
+}
+
+fun PokemonViewModel.setUse24HourTime(use24HourTime: Boolean) {
+    processIntent(PokemonIntent.SetUse24HourTime(use24HourTime = use24HourTime))
+}
+
+fun PokemonViewModel.openModePicker() {
+    processIntent(PokemonIntent.OpenModePicker)
+}
+
+fun PokemonViewModel.closeModePicker() {
+    processIntent(PokemonIntent.CloseModePicker)
+}
+
+fun PokemonViewModel.selectThemeMode(themeMode: ThemeMode) {
+    processIntent(PokemonIntent.SelectThemeMode(themeMode = themeMode))
+}
+
+fun PokemonViewModel.openAbout() {
+    processIntent(PokemonIntent.OpenAbout)
+}
+
+fun PokemonViewModel.closeAbout() {
+    processIntent(PokemonIntent.CloseAbout)
 }
 
 fun PokemonViewModel.closeTeamFullDialog() {

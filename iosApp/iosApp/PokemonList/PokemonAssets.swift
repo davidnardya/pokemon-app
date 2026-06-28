@@ -32,6 +32,42 @@ enum PokemonAssets {
     static func loadingList(isDark: Bool) -> String {
         isDark ? "img_darkmode_loading_list" : "img_lightmode_loading_list"
     }
+
+    static func addToTeam(isDark: Bool) -> String {
+        isDark ? "img_darkmode_add_to_team" : "img_lightmode_add_to_team"
+    }
+
+    static func settingsClose(isDark: Bool) -> String {
+        isDark ? "ic_darkmode_settings_close" : "ic_lightmode_settings_close"
+    }
+
+    static func settingsUnit(isDark: Bool) -> String {
+        isDark ? "ic_darkmode_unit" : "ic_lightmode_unit"
+    }
+
+    static func settingsClock(isDark: Bool) -> String {
+        isDark ? "ic_darkmode_clock" : "ic_lightmode_clock"
+    }
+
+    static func settingsMode(isDark: Bool) -> String {
+        isDark ? "ic_darkmode_mode" : "ic_lightmode_mode"
+    }
+
+    static func settingsAbout(isDark: Bool) -> String {
+        isDark ? "ic_darkmode_about" : "ic_lightmode_about"
+    }
+
+    static func settingsCheckmark(isDark: Bool) -> String {
+        "ic_lightmode_checkmark"
+    }
+
+    static func settingsDownArrow(isDark: Bool) -> String {
+        isDark ? "ic_darkmode_down_arrow" : "ic_lightmode_down_arrow"
+    }
+
+    static func settingsRightArrow(isDark: Bool) -> String {
+        isDark ? "ic_darkmode_right_arrow" : "ic_lightmode_right_arrow"
+    }
 }
 
 struct ThemedAssetImage: View {

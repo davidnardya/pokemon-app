@@ -15,7 +15,7 @@ final class PokemonListViewModelWrapper: ObservableObject {
         self.uiState = viewModel.currentUiState()
 
         cancelObservation = viewModel.watchUiState { [weak self] state in
-            Task { @MainActor in
+            DispatchQueue.main.async {
                 self?.uiState = state
             }
         }
@@ -73,8 +73,40 @@ final class PokemonListViewModelWrapper: ObservableObject {
         viewModel.toggleTimeFormat()
     }
 
-    func toggleTheme() {
-        viewModel.toggleTheme()
+    func setMetricUnits(useMetric: Bool) {
+        viewModel.setMetricUnits(useMetric: useMetric)
+        uiState = viewModel.currentUiState()
+    }
+
+    func setUse24HourTime(use24HourTime: Bool) {
+        viewModel.setUse24HourTime(use24HourTime: use24HourTime)
+        uiState = viewModel.currentUiState()
+    }
+
+    func openModePicker() {
+        viewModel.openModePicker()
+        uiState = viewModel.currentUiState()
+    }
+
+    func closeModePicker() {
+        viewModel.closeModePicker()
+        uiState = viewModel.currentUiState()
+    }
+
+    func selectThemeMode(_ themeMode: ThemeMode) {
+        viewModel.selectThemeMode(themeMode: themeMode)
+        uiState = viewModel.currentUiState()
+        objectWillChange.send()
+    }
+
+    func openAbout() {
+        viewModel.openAbout()
+        uiState = viewModel.currentUiState()
+    }
+
+    func closeAbout() {
+        viewModel.closeAbout()
+        uiState = viewModel.currentUiState()
     }
 
     func closeTeamFullDialog() {
@@ -111,6 +143,10 @@ extension PokemonListState {
 
     var displayedPokemonArray: [Pokemon] {
         Array(displayedPokemon())
+    }
+
+    var teamPokemonItemsArray: [TeamPokemonItem] {
+        Array(toTeamPokemonItemsArray())
     }
 
     var teamIds: [Int32] {

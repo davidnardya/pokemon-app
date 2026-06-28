@@ -1,8 +1,13 @@
 package com.davidnardie.pokemon.presentation.viewmodel
 
+import com.davidnardie.pokemon.domain.model.TeamMember
 import com.davidnardie.pokemon.domain.repository.PokemonRepository
+import com.davidnardie.pokemon.domain.repository.SettingsRepository
 import com.davidnardie.pokemon.presentation.intent.PokemonIntent
+import com.davidnardie.pokemon.presentation.state.AppSettings
+import com.davidnardie.pokemon.presentation.state.NavigationTab
 import com.davidnardie.pokemon.presentation.state.PokemonListState
+import com.davidnardie.pokemon.presentation.util.TeamDateFormatter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,10 +20,13 @@ import kotlinx.coroutines.launch
 
 class PokemonViewModel(
     private val repository: PokemonRepository,
+    private val settingsRepository: SettingsRepository,
 ) {
     private val viewModelScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val _uiState = MutableStateFlow(PokemonListState())
+    private val _uiState = MutableStateFlow(
+        PokemonListState(settings = settingsRepository.loadSettings()),
+    )
     val uiState: StateFlow<PokemonListState> = _uiState.asStateFlow()
 
     fun processIntent(intent: PokemonIntent) {
@@ -29,22 +37,52 @@ class PokemonViewModel(
             )
             PokemonIntent.LoadNextPage -> loadNextPage()
             PokemonIntent.OpenSettings -> _uiState.update { it.copy(isSettingsVisible = true) }
-            PokemonIntent.CloseSettings -> _uiState.update { it.copy(isSettingsVisible = false) }
-            is PokemonIntent.SelectTab -> _uiState.update { it.copy(selectedTab = intent.tab) }
+            PokemonIntent.CloseSettings -> _uiState.update {
+                it.copy(
+                    isSettingsVisible = false,
+                    isModePickerVisible = false,
+                    isAboutVisible = false,
+                )
+            }
+            is PokemonIntent.SelectTab -> {
+                _uiState.update { it.copy(selectedTab = intent.tab) }
+                if (intent.tab == NavigationTab.Team) {
+                    ensureTeamMemberTypes()
+                }
+            }
             is PokemonIntent.ToggleTeamMembership -> toggleTeamMembership(intent.pokemonId)
             is PokemonIntent.OpenPokemonDetail -> _uiState.update { it.copy(selectedPokemon = intent.pokemon) }
             PokemonIntent.ClosePokemonDetail -> _uiState.update { it.copy(selectedPokemon = null) }
-            PokemonIntent.ToggleMetricUnits -> _uiState.update {
-                it.copy(settings = it.settings.copy(useMetricUnits = !it.settings.useMetricUnits))
+            PokemonIntent.ToggleMetricUnits -> updateSettings { settings ->
+                settings.copy(useMetricUnits = !settings.useMetricUnits)
             }
-            PokemonIntent.ToggleTimeFormat -> _uiState.update {
-                it.copy(settings = it.settings.copy(use24HourTime = !it.settings.use24HourTime))
+            is PokemonIntent.SetMetricUnits -> updateSettings { settings ->
+                settings.copy(useMetricUnits = intent.useMetric)
             }
-            PokemonIntent.ToggleTheme -> _uiState.update {
-                it.copy(settings = it.settings.copy(useDarkTheme = !it.settings.useDarkTheme))
+            PokemonIntent.ToggleTimeFormat -> updateSettings { settings ->
+                settings.copy(use24HourTime = !settings.use24HourTime)
             }
+            is PokemonIntent.SetUse24HourTime -> updateSettings { settings ->
+                settings.copy(use24HourTime = intent.use24HourTime)
+            }
+            PokemonIntent.OpenModePicker -> _uiState.update { it.copy(isModePickerVisible = true) }
+            PokemonIntent.CloseModePicker -> _uiState.update { it.copy(isModePickerVisible = false) }
+            is PokemonIntent.SelectThemeMode -> {
+                updateSettings { settings ->
+                    settings.copy(themeMode = intent.themeMode)
+                }
+                _uiState.update { it.copy(isModePickerVisible = false) }
+            }
+            PokemonIntent.OpenAbout -> _uiState.update { it.copy(isAboutVisible = true) }
+            PokemonIntent.CloseAbout -> _uiState.update { it.copy(isAboutVisible = false) }
             PokemonIntent.CloseTeamFullDialog -> _uiState.update { it.copy(showTeamFullDialog = false) }
         }
+    }
+
+    private fun updateSettings(transform: (AppSettings) -> AppSettings) {
+        val updatedSettings = transform(_uiState.value.settings)
+        settingsRepository.saveSettings(updatedSettings)
+        _uiState.update { it.copy(settings = updatedSettings) }
     }
 
     fun onCleared() {
@@ -55,18 +93,48 @@ class PokemonViewModel(
         val state = _uiState.value
         if (state.isInTeam(pokemonId)) {
             _uiState.update { current ->
-                current.copy(teamPokemonIds = current.teamPokemonIds.filterNot { it == pokemonId })
+                current.copy(
+                    teamMembers = current.teamMembers.filterNot { it.pokemonId == pokemonId },
+                    pokemonTypes = current.pokemonTypes - pokemonId,
+                )
             }
             return
         }
 
-        if (state.teamPokemonIds.size >= MAX_TEAM_SIZE) {
+        if (state.teamMembers.size >= PokemonListState.MAX_TEAM_SIZE) {
             _uiState.update { it.copy(showTeamFullDialog = true) }
             return
         }
 
+        val (month, day) = TeamDateFormatter.currentMonthDay()
         _uiState.update { current ->
-            current.copy(teamPokemonIds = current.teamPokemonIds + pokemonId)
+            current.copy(
+                teamMembers = current.teamMembers + TeamMember(
+                    pokemonId = pokemonId,
+                    addedMonth = month,
+                    addedDay = day,
+                ),
+            )
+        }
+        fetchPokemonTypes(pokemonId)
+    }
+
+    private fun ensureTeamMemberTypes() {
+        val state = _uiState.value
+        state.teamMembers
+            .map { it.pokemonId }
+            .filter { it !in state.pokemonTypes }
+            .forEach(::fetchPokemonTypes)
+    }
+
+    private fun fetchPokemonTypes(pokemonId: Int) {
+        viewModelScope.launch {
+            val types = repository.fetchPokemonTypes(pokemonId)
+            if (types.isNotEmpty()) {
+                _uiState.update { current ->
+                    current.copy(pokemonTypes = current.pokemonTypes + (pokemonId to types))
+                }
+            }
         }
     }
 
@@ -88,6 +156,7 @@ class PokemonViewModel(
                         error = if (page.isOffline && page.pokemon.isEmpty()) OFFLINE_ERROR_MESSAGE else null,
                     )
                 }
+                ensureTeamMemberTypes()
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -122,6 +191,7 @@ class PokemonViewModel(
                         error = if (page.isOffline && page.pokemon.isEmpty()) OFFLINE_ERROR_MESSAGE else null,
                     )
                 }
+                ensureTeamMemberTypes()
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -136,7 +206,6 @@ class PokemonViewModel(
 
     private companion object {
         const val PAGE_SIZE = 20
-        const val MAX_TEAM_SIZE = 6
         const val OFFLINE_ERROR_MESSAGE = "Check your connection"
     }
 }

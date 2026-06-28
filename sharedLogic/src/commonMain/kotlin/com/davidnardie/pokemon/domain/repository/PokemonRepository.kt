@@ -2,6 +2,7 @@ package com.davidnardie.pokemon.domain.repository
 
 import com.davidnardie.pokemon.domain.model.Pokemon
 import com.davidnardie.pokemon.domain.model.PokemonPage
+import com.davidnardie.pokemon.domain.model.PokemonType
 import kotlinx.coroutines.flow.Flow
 
 interface PokemonRepository {
@@ -12,4 +13,6 @@ interface PokemonRepository {
      * @return Page data; [PokemonPage.isOffline] is `true` when the fetch failed due to connectivity.
      */
     suspend fun refresh(limit: Int, offset: Int): PokemonPage
+
+    suspend fun fetchPokemonTypes(pokemonId: Int): List<PokemonType>
 }

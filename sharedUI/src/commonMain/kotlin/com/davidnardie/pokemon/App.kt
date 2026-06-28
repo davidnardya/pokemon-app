@@ -1,6 +1,8 @@
 package com.davidnardie.pokemon
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.davidnardie.pokemon.domain.model.Pokemon
 import com.davidnardie.pokemon.presentation.state.AppSettings
@@ -11,11 +13,16 @@ import org.koin.compose.koinInject
 import ui.pokemonlist.PokemonMainListContent
 import ui.pokemonlist.PokemonMainListScreen
 import ui.theme.PokemonAppTheme
+import ui.theme.SyncPlatformThemeMode
 
 @Composable
 fun App() {
-    PokemonAppTheme {
-        val viewModel: PokemonViewModel = koinInject()
+    val viewModel: PokemonViewModel = koinInject()
+    val uiState by viewModel.uiState.collectAsState()
+
+    SyncPlatformThemeMode(uiState.settings.themeMode)
+
+    PokemonAppTheme(themeMode = uiState.settings.themeMode) {
         PokemonMainListScreen(viewModel = viewModel)
     }
 }
@@ -32,8 +39,14 @@ private fun PokemonMainListPreview() {
                     Pokemon(id = 3, name = "venusaur"),
                     Pokemon(id = 4, name = "charmander"),
                 ),
-                selectedTab = NavigationTab.Pokemon,
-                teamPokemonIds = listOf(1),
+                selectedTab = NavigationTab.Team,
+                teamMembers = listOf(
+                    com.davidnardie.pokemon.domain.model.TeamMember(
+                        pokemonId = 1,
+                        addedMonth = 12,
+                        addedDay = 5,
+                    ),
+                ),
                 settings = AppSettings(),
             ),
             onSettingsClick = {},
