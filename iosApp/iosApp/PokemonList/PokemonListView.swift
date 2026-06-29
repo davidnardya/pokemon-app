@@ -2,14 +2,15 @@ import SwiftUI
 import SharedLogic
 
 struct PokemonListView: View {
-    @StateObject private var viewModel = PokemonListViewModelWrapper()
+    @StateObject private var listViewModel = PokemonListViewModelWrapper()
+    @StateObject private var settingsViewModel = SettingsViewModelWrapper()
     @State private var isNearListEnd = false
     @State private var showAboutPopup = false
     @State private var pokemonScrollPosition = ScrollPosition(edge: .top)
     @Environment(\.colorScheme) private var systemColorScheme
 
     private var themeMode: ThemeMode {
-        viewModel.uiState.settings.themeMode
+        settingsViewModel.uiState.settings.themeMode
     }
 
     private var effectiveColorScheme: ColorScheme {
@@ -31,7 +32,7 @@ struct PokemonListView: View {
         ZStack {
             appContent
 
-            if viewModel.uiState.isSettingsVisible {
+            if settingsViewModel.uiState.isVisible {
                 settingsDrawerLayer
             }
 
@@ -51,10 +52,10 @@ struct PokemonListView: View {
             }
         }
         .preferredColorScheme(ThemeAppearance.preferredColorScheme(for: themeMode))
-        .animation(.easeInOut(duration: 0.25), value: viewModel.uiState.isSettingsVisible)
+        .animation(.easeInOut(duration: 0.25), value: settingsViewModel.uiState.isVisible)
         .onAppear {
-            if viewModel.uiState.pokemonArray.isEmpty && !viewModel.uiState.isLoading {
-                viewModel.loadInitialList()
+            if listViewModel.uiState.pokemonArray.isEmpty && !listViewModel.uiState.isLoading {
+                listViewModel.loadInitialList()
             }
         }
     }
@@ -62,33 +63,30 @@ struct PokemonListView: View {
     private var appContent: some View {
         ZStack {
             mainList
-                .opacity(viewModel.uiState.selectedPokemonId == nil ? 1 : 0)
-                .allowsHitTesting(viewModel.uiState.selectedPokemonId == nil)
+                .opacity(listViewModel.uiState.selectedPokemonId == nil ? 1 : 0)
+                .allowsHitTesting(listViewModel.uiState.selectedPokemonId == nil)
 
-            if let selectedPokemonId = viewModel.uiState.selectedPokemonId?.int32Value {
-                if let selectedPokemon = viewModel.uiState.selectedPokemonOrNull() {
-                    PokemonDetailView(
+            if let selectedPokemonId = listViewModel.uiState.selectedPokemonId?.int32Value {
+                if let selectedPokemon = listViewModel.uiState.selectedPokemonOrNull() {
+                    PokemonDetailContainerView(
                         pokemon: selectedPokemon,
-                        detail: viewModel.uiState.detailForPokemon(pokemonId: selectedPokemonId),
-                        isDetailLoading: viewModel.uiState.isDetailLoading,
-                        detailLoadFailed: viewModel.uiState.detailLoadFailed,
-                        useMetricUnits: viewModel.uiState.settings.useMetricUnits,
                         themeMode: themeMode,
-                        onBack: viewModel.closePokemonDetail,
-                        onSettings: viewModel.openSettings
+                        onBack: listViewModel.closePokemonDetail,
+                        onSettings: settingsViewModel.openSettings
                     )
+                    .id(selectedPokemonId)
                 } else {
                     PokemonDetailErrorView(
                         message: "This Pokémon is no longer available in the list.",
                         themeMode: themeMode,
-                        onBack: viewModel.closePokemonDetail
+                        onBack: listViewModel.closePokemonDetail
                     )
                 }
             }
         }
         .overlay {
-            if viewModel.uiState.showTeamFullDialog {
-                FullTeamDialogView(onClose: viewModel.closeTeamFullDialog)
+            if listViewModel.uiState.showTeamFullDialog {
+                FullTeamDialogView(onClose: listViewModel.closeTeamFullDialog)
             }
         }
     }
@@ -98,10 +96,10 @@ struct PokemonListView: View {
             ZStack(alignment: .bottom) {
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
-                    .onTapGesture { viewModel.closeSettings() }
+                    .onTapGesture { settingsViewModel.closeSettings() }
 
                 SettingsDrawerView(
-                    viewModel: viewModel,
+                    viewModel: settingsViewModel,
                     systemColorScheme: systemColorScheme,
                     onAboutTap: { showAboutPopup = true }
                 )
@@ -133,9 +131,9 @@ struct PokemonListView: View {
             }
 
             IOSBottomNavigationView(
-                selectedTab: viewModel.uiState.selectedTab,
-                onPokemonTap: viewModel.selectPokemonTab,
-                onTeamTap: viewModel.selectTeamTab
+                selectedTab: listViewModel.uiState.selectedTab,
+                onPokemonTap: listViewModel.selectPokemonTab,
+                onTeamTap: listViewModel.selectTeamTab
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
@@ -149,7 +147,7 @@ struct PokemonListView: View {
 
             Spacer()
 
-            Button(action: viewModel.openSettings) {
+            Button(action: settingsViewModel.openSettings) {
                 Image(PokemonAssets.settings(isDark: isDark))
                     .renderingMode(.original)
                     .resizable()
@@ -168,8 +166,8 @@ struct PokemonListView: View {
     }
 
     private var screenTitle: String {
-        if viewModel.uiState.selectedTabIsTeam {
-            return "My Team (\(viewModel.uiState.teamCount)/\(PokemonListState.companion.MAX_TEAM_SIZE))"
+        if listViewModel.uiState.selectedTabIsTeam {
+            return "Team \(listViewModel.uiState.teamCount)/\(PokemonListUiState.companion.MAX_TEAM_SIZE)"
         }
         return "Pokemon"
     }
@@ -177,18 +175,18 @@ struct PokemonListView: View {
     @ViewBuilder
     private var content: some View {
         PokemonLoadingView(
-            uiState: viewModel.uiState,
+            uiState: listViewModel.uiState,
             isDark: isDark,
-            onRefresh: viewModel.uiState.selectedTabIsPokemon
-                ? { await viewModel.refreshPokemonListAsync() }
+            onRefresh: listViewModel.uiState.selectedTabIsPokemon
+                ? { await listViewModel.refreshPokemonListAsync() }
                 : nil
         ) {
             ZStack {
                 pokemonGrid
-                    .opacity(viewModel.uiState.selectedTabIsPokemon ? 1 : 0)
-                    .allowsHitTesting(viewModel.uiState.selectedTabIsPokemon)
+                    .opacity(listViewModel.uiState.selectedTabIsPokemon ? 1 : 0)
+                    .allowsHitTesting(listViewModel.uiState.selectedTabIsPokemon)
 
-                if viewModel.uiState.selectedTabIsTeam {
+                if listViewModel.uiState.selectedTabIsTeam {
                     teamList
                 }
             }
@@ -197,10 +195,10 @@ struct PokemonListView: View {
 
     private var teamList: some View {
         TeamListView(
-            teamItems: viewModel.uiState.teamPokemonItemsArray,
-            teamCount: Int(viewModel.uiState.teamCount),
-            onRemoveFromTeam: viewModel.toggleTeamMembership(pokemonId:),
-            onAddMoreTap: viewModel.selectPokemonTab
+            teamItems: listViewModel.uiState.teamPokemonItemsArray,
+            teamCount: Int(listViewModel.uiState.teamCount),
+            onRemoveFromTeam: listViewModel.toggleTeamMembership(pokemonId:),
+            onAddMoreTap: listViewModel.selectPokemonTab
         )
     }
 
@@ -213,23 +211,23 @@ struct PokemonListView: View {
                 ],
                 spacing: 12
             ) {
-                ForEach(Array(viewModel.uiState.displayedPokemonArray.enumerated()), id: \.element.id) { index, pokemon in
+                ForEach(Array(listViewModel.uiState.displayedPokemonArray.enumerated()), id: \.element.id) { index, pokemon in
                     PokemonCardView(
                         pokemon: pokemon,
-                        isInTeam: viewModel.isInTeam(pokemonId: pokemon.id),
-                        onPokemonTap: { viewModel.openPokemonDetail(pokemon: pokemon) },
-                        onPokeballTap: { viewModel.toggleTeamMembership(pokemonId: pokemon.id) }
+                        isInTeam: listViewModel.isInTeam(pokemonId: pokemon.id),
+                        onPokemonTap: { listViewModel.openPokemonDetail(pokemon: pokemon) },
+                        onPokeballTap: { listViewModel.toggleTeamMembership(pokemonId: pokemon.id) }
                     )
                     .onAppear {
-                        if viewModel.uiState.selectedTabIsPokemon,
-                           index >= viewModel.uiState.displayedPokemonArray.count - 2 {
+                        if listViewModel.uiState.selectedTabIsPokemon,
+                           index >= listViewModel.uiState.displayedPokemonArray.count - 2 {
                             isNearListEnd = true
                             loadNextPageIfNeeded()
                         }
                     }
                 }
 
-                if viewModel.uiState.hasMore && viewModel.uiState.selectedTabIsPokemon {
+                if listViewModel.uiState.hasMore && listViewModel.uiState.selectedTabIsPokemon {
                     paginationTrigger
                 }
             }
@@ -238,11 +236,11 @@ struct PokemonListView: View {
             .padding(.bottom, IOSBottomNavigationMetrics.contentBottomInset)
         }
         .scrollPosition($pokemonScrollPosition)
-        .scrollDisabled(!viewModel.uiState.selectedTabIsPokemon)
+        .scrollDisabled(!listViewModel.uiState.selectedTabIsPokemon)
         .refreshable {
-            await viewModel.refreshPokemonListAsync()
+            await listViewModel.refreshPokemonListAsync()
         }
-        .onChange(of: viewModel.uiState.isLoading) { _, isLoading in
+        .onChange(of: listViewModel.uiState.isLoading) { _, isLoading in
             if !isLoading && isNearListEnd {
                 loadNextPageIfNeeded()
             }
@@ -260,9 +258,9 @@ struct PokemonListView: View {
     }
 
     private func loadNextPageIfNeeded() {
-        let state = viewModel.uiState
+        let state = listViewModel.uiState
         guard state.selectedTabIsPokemon, !state.isLoading, !state.isRefreshing, state.hasMore else { return }
-        viewModel.loadNextPage()
+        listViewModel.loadNextPage()
     }
 }
 

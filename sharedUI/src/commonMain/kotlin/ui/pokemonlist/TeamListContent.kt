@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.davidnardie.pokemon.presentation.model.TeamPokemonItem
-import com.davidnardie.pokemon.presentation.state.PokemonListState
+import com.davidnardie.pokemon.presentation.state.PokemonListUiState
 import org.jetbrains.compose.resources.painterResource
 import pokemonapp.sharedui.generated.resources.Res
 import pokemonapp.sharedui.generated.resources.img_darkmode_add_to_team
@@ -56,7 +56,7 @@ internal fun TeamListContent(
             )
         }
 
-        if (teamCount < PokemonListState.MAX_TEAM_SIZE) {
+        if (teamCount < PokemonListUiState.MAX_TEAM_SIZE) {
             AddMoreToTeamButton(
                 isDarkTheme = isDarkTheme,
                 colors = colors,

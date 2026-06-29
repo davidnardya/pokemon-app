@@ -1,35 +1,46 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+# PokemonApp
 
-* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+A Kotlin Multiplatform Pokémon browser that fetches data from [PokeAPI](https://pokeapi.co/). Browse paginated Pokémon, view details, build a team, and customize light/dark theme settings.
 
-* [/sharedLogic](./sharedLogic/src) is for the code that will be shared between app targets in the project.
-  The most important subfolder is [commonMain](./sharedLogic/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
+## Features
 
-* [/sharedUI](./sharedUI/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./sharedUI/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./sharedUI/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./sharedUI/src/jvmMain/kotlin)
-    folder is the appropriate location.
+- Paginated Pokémon list with pull-to-refresh
+- Pokémon detail view (stats, types, moves)
+- Team builder with local persistence
+- Light, dark, and system theme modes
 
-### Running the apps
+## Architecture
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+The project follows clean architecture with shared business logic in Kotlin:
 
-- Android app: `./gradlew :androidApp:assembleDebug`
-- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+| Module | Role |
+|--------|------|
+| `sharedLogic` | Domain models, repositories, ViewModels, Room database, Ktor networking |
+| `sharedUI` | Compose Multiplatform UI (Android) |
+| `androidApp` | Android entry point |
+| `iosApp` | SwiftUI entry point using the `SharedLogic` framework |
 
-### Running tests
+**Stack:** Kotlin Multiplatform, Ktor, Koin, Room, Coil, Compose Multiplatform (Android), SwiftUI (iOS)
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+## Getting started
 
-- Android tests: `./gradlew :sharedUI:testAndroidHostTest :sharedLogic:testAndroidHostTest`
-- iOS tests: `./gradlew :sharedLogic:iosSimulatorArm64Test`
+**Requirements:** JDK 11+, Android Studio (or IntelliJ), Xcode (for iOS)
 
----
+### Android
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+```bash
+./gradlew :androidApp:assembleDebug
+```
+
+Or run the `androidApp` configuration from your IDE.
+
+### iOS
+
+Open `iosApp/iosApp.xcodeproj` in Xcode and run on a simulator or device.
+
+## Tests
+
+```bash
+./gradlew :sharedUI:testAndroidHostTest :sharedLogic:testAndroidHostTest
+./gradlew :sharedLogic:iosSimulatorArm64Test
+```

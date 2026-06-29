@@ -7,9 +7,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.davidnardie.pokemon.domain.model.Pokemon
 import com.davidnardie.pokemon.presentation.state.AppSettings
 import com.davidnardie.pokemon.presentation.state.NavigationTab
-import com.davidnardie.pokemon.presentation.state.PokemonListState
-import com.davidnardie.pokemon.presentation.viewmodel.PokemonViewModel
-import org.koin.compose.koinInject
+import com.davidnardie.pokemon.presentation.state.PokemonListUiState
+import com.davidnardie.pokemon.presentation.viewmodel.SettingsViewModel
+import org.koin.compose.viewmodel.koinViewModel
 import ui.pokemonlist.PokemonMainListContent
 import ui.pokemonlist.PokemonMainListScreen
 import ui.theme.PokemonAppTheme
@@ -17,13 +17,13 @@ import ui.theme.SyncPlatformThemeMode
 
 @Composable
 fun App() {
-    val viewModel: PokemonViewModel = koinInject()
-    val uiState by viewModel.uiState.collectAsState()
+    val settingsViewModel: SettingsViewModel = koinViewModel()
+    val settingsState by settingsViewModel.uiState.collectAsState()
 
-    SyncPlatformThemeMode(uiState.settings.themeMode)
+    SyncPlatformThemeMode(settingsState.settings.themeMode)
 
-    PokemonAppTheme(themeMode = uiState.settings.themeMode) {
-        PokemonMainListScreen(viewModel = viewModel)
+    PokemonAppTheme(themeMode = settingsState.settings.themeMode) {
+        PokemonMainListScreen(settingsViewModel = settingsViewModel)
     }
 }
 
@@ -32,7 +32,7 @@ fun App() {
 private fun PokemonMainListPreview() {
     PokemonAppTheme {
         PokemonMainListContent(
-            uiState = PokemonListState(
+            listState = PokemonListUiState(
                 pokemon = listOf(
                     Pokemon(id = 1, name = "bulbasaur"),
                     Pokemon(id = 2, name = "ivysaur"),
@@ -47,8 +47,11 @@ private fun PokemonMainListPreview() {
                         addedDay = 5,
                     ),
                 ),
-                settings = AppSettings(),
             ),
+            settings = AppSettings(),
+            isSettingsVisible = false,
+            isModePickerVisible = false,
+            isAboutVisible = false,
             onSettingsClick = {},
             onTabSelected = {},
             onLoadNextPage = {},

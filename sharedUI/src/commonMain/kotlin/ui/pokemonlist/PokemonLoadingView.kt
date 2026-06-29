@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import com.davidnardie.pokemon.presentation.state.PokemonListState
+import com.davidnardie.pokemon.presentation.state.PokemonListUiState
 import org.jetbrains.compose.resources.painterResource
 import pokemonapp.sharedui.generated.resources.Res
 import pokemonapp.sharedui.generated.resources.ic_loading_pokeball_orange
@@ -68,7 +68,7 @@ fun PokemonLoadingView(
 
 @Composable
 fun PokemonLoadingView(
-    uiState: PokemonListState,
+    listState: PokemonListUiState,
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     isRefreshing: Boolean = false,
@@ -76,9 +76,9 @@ fun PokemonLoadingView(
     content: @Composable () -> Unit,
 ) {
     PokemonLoadingView(
-        isLoading = uiState.isLoading,
-        networkError = uiState.networkError,
-        isCacheEmpty = uiState.isCacheEmpty,
+        isLoading = listState.isLoading,
+        networkError = listState.networkError,
+        isCacheEmpty = listState.isCacheEmpty,
         modifier = modifier,
         isDarkTheme = isDarkTheme,
         isRefreshing = isRefreshing,

@@ -47,6 +47,10 @@ kotlin {
 
             // Dependency Injection
             implementation(libs.koin.core)
+            implementation(libs.koin.core.viewmodel)
+
+            // ViewModel
+            implementation(libs.androidx.lifecycle.viewmodel)
 
             // Coroutines
             implementation(libs.kotlinx.coroutines.core)

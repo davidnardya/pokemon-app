@@ -20,10 +20,4 @@ enum class ThemeMode {
         Light -> "Light"
         Dark -> "Dark"
     }
-
-    fun resolveIsDark(systemIsDark: Boolean): Boolean = when (this) {
-        System -> systemIsDark
-        Light -> false
-        Dark -> true
-    }
 }

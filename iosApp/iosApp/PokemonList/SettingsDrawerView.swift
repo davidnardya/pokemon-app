@@ -2,7 +2,7 @@ import SwiftUI
 import SharedLogic
 
 struct SettingsDrawerView: View {
-    @ObservedObject var viewModel: PokemonListViewModelWrapper
+    @ObservedObject var viewModel: SettingsViewModelWrapper
     let systemColorScheme: ColorScheme
     let onAboutTap: () -> Void
 
@@ -357,7 +357,7 @@ extension ThemeMode {
 
 #Preview {
     SettingsDrawerView(
-        viewModel: PokemonListViewModelWrapper(),
+        viewModel: SettingsViewModelWrapper(),
         systemColorScheme: .light,
         onAboutTap: {}
     )

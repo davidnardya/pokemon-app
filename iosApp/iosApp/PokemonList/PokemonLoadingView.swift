@@ -10,7 +10,7 @@ struct PokemonLoadingView<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     init(
-        uiState: PokemonListState,
+        uiState: PokemonListUiState,
         isDark: Bool,
         onRefresh: (() async -> Void)? = nil,
         @ViewBuilder content: @escaping () -> Content

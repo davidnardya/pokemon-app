@@ -473,3 +473,40 @@ struct PokemonDetailErrorView: View {
         .background(colors.screenBackground.ignoresSafeArea())
     }
 }
+
+struct PokemonDetailContainerView: View {
+    let pokemon: Pokemon
+    let themeMode: ThemeMode
+    let onBack: () -> Void
+    let onSettings: () -> Void
+
+    @StateObject private var detailViewModel: PokemonDetailViewModelWrapper
+
+    init(
+        pokemon: Pokemon,
+        themeMode: ThemeMode,
+        onBack: @escaping () -> Void,
+        onSettings: @escaping () -> Void
+    ) {
+        self.pokemon = pokemon
+        self.themeMode = themeMode
+        self.onBack = onBack
+        self.onSettings = onSettings
+        _detailViewModel = StateObject(
+            wrappedValue: PokemonDetailViewModelWrapper(pokemonId: pokemon.id)
+        )
+    }
+
+    var body: some View {
+        PokemonDetailView(
+            pokemon: pokemon,
+            detail: detailViewModel.uiState.detail,
+            isDetailLoading: detailViewModel.uiState.isLoading,
+            detailLoadFailed: detailViewModel.uiState.loadFailed,
+            useMetricUnits: detailViewModel.uiState.useMetricUnits,
+            themeMode: themeMode,
+            onBack: onBack,
+            onSettings: onSettings
+        )
+    }
+}

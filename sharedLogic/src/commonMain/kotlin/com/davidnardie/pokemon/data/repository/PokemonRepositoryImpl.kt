@@ -24,6 +24,8 @@ class PokemonRepositoryImpl(
     private val dao: PokemonDao,
 ) : PokemonRepository {
 
+    private val detailCache = mutableMapOf<Int, PokemonDetail>()
+
     override fun getPokemonList(): Flow<List<Pokemon>> =
         dao.getAllPokemon().map { entities ->
             entities.map { it.toDomain() }
@@ -31,6 +33,7 @@ class PokemonRepositoryImpl(
 
     override suspend fun hardRefresh(limit: Int): PokemonPage {
         dao.deleteAll()
+        detailCache.clear()
         return refresh(limit = limit, offset = 0)
     }
 
@@ -80,10 +83,13 @@ class PokemonRepositoryImpl(
     }
 
     override suspend fun fetchPokemonDetail(pokemonId: Int): PokemonDetail? {
+        detailCache[pokemonId]?.let { return it }
         return try {
-            val response = httpClient.get("$POKEMON_DETAIL_URL$pokemonId")
+            val response = httpClient.get("$POKEMON_LIST_URL/$pokemonId")
                 .body<PokemonDetailDto>()
-            response.toDomain(pokemonId)
+            response.toDomain(pokemonId).also { detail ->
+                detailCache[pokemonId] = detail
+            }
         } catch (_: Exception) {
             null
         }
@@ -91,6 +97,5 @@ class PokemonRepositoryImpl(
 
     private companion object {
         const val POKEMON_LIST_URL = "https://pokeapi.co/api/v2/pokemon"
-        const val POKEMON_DETAIL_URL = "https://pokeapi.co/api/v2/pokemon/"
     }
 }

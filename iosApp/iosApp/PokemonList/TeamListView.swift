@@ -27,7 +27,7 @@ struct TeamListView: View {
                     )
                 }
 
-                if teamCount < Int(PokemonListState.companion.MAX_TEAM_SIZE) {
+                if teamCount < Int(PokemonListUiState.companion.MAX_TEAM_SIZE) {
                     addMoreButton
                 }
 
