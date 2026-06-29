@@ -2,8 +2,10 @@ package ui.pokemonlist
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,37 +51,33 @@ internal fun SettingsAboutDialog(
                 .background(colors.aboutBackground)
                 .padding(horizontal = 24.dp, vertical = 20.dp),
         ) {
-            IconButton(
-                onClick = onClose,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(colors.closeButtonBackground),
-            ) {
-                Icon(
-                    painter = painterResource(
-                        if (isDarkTheme) Res.drawable.ic_darkmode_settings_close
-                        else Res.drawable.ic_lightmode_settings_close,
-                    ),
-                    contentDescription = "Close about",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    text = "About",
-                    color = colors.primaryText,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "About",
+                        color = colors.primaryText,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    IconButton(onClick = onClose) {
+                        Icon(
+                            painter = painterResource(
+                                if (isDarkTheme) Res.drawable.ic_darkmode_settings_close
+                                else Res.drawable.ic_lightmode_settings_close,
+                            ),
+                            contentDescription = "Close about",
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(28.dp))
 
