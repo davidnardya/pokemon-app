@@ -2,7 +2,8 @@ package ui.pokemonlist
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import ui.theme.isPokemonDarkTheme
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,12 +12,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import com.davidnardie.pokemon.presentation.util.DialogButtonTheme
+import ui.theme.isPokemonDarkTheme
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -95,23 +98,27 @@ fun FullTeamDialog(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            TextButton(
-                onClick = onDismiss,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(RoundedCornerShape(50))
                     .background(
                         brush = Brush.verticalGradient(
-                            colors = listOf(colors.buttonGradientTop, colors.buttonGradientBottom),
+                            colors = listOf(
+                                DialogButtonTheme.closeButtonGradientTop().toComposeColor(),
+                                DialogButtonTheme.closeButtonGradientBottom().toComposeColor(),
+                            ),
                         ),
-                        shape = RoundedCornerShape(50),
-                    ),
+                    )
+                    .clickable(onClick = onDismiss),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "Close",
-                    color = colors.buttonText,
+                    color = DialogButtonTheme.closeButtonText().toComposeColor(),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 6.dp),
+                    modifier = Modifier.padding(vertical = 14.dp),
                 )
             }
         }
@@ -123,9 +130,6 @@ private data class FullTeamDialogColors(
     val title: Color,
     val description: Color,
     val emphasisText: Color,
-    val buttonGradientTop: Color,
-    val buttonGradientBottom: Color,
-    val buttonText: Color,
 )
 
 @Composable
@@ -136,9 +140,6 @@ private fun rememberFullTeamDialogColors(isDarkTheme: Boolean): FullTeamDialogCo
             title = Color(0xFFFFFFFF),
             description = Color(0xFF8E8E93),
             emphasisText = Color(0xFFFFFFFF),
-            buttonGradientTop = Color(0xFFEBEBEF),
-            buttonGradientBottom = Color(0xFFD1D1D6),
-            buttonText = Color(0xFF1C1C1E),
         )
     } else {
         FullTeamDialogColors(
@@ -146,9 +147,6 @@ private fun rememberFullTeamDialogColors(isDarkTheme: Boolean): FullTeamDialogCo
             title = Color(0xFF222222),
             description = Color(0xFF666666),
             emphasisText = Color(0xFF444444),
-            buttonGradientTop = Color(0xFF555555),
-            buttonGradientBottom = Color(0xFF1A1A1A),
-            buttonText = Color(0xFFFFFFFF),
         )
     }
 }

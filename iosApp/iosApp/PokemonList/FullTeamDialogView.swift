@@ -1,3 +1,4 @@
+import SharedLogic
 import SwiftUI
 
 struct FullTeamDialogView: View {
@@ -42,17 +43,21 @@ struct FullTeamDialogView: View {
                 Button(action: onClose) {
                     Text("Close")
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(colors.buttonText)
+                        .foregroundStyle(Color(argb: DialogButtonTheme.shared.closeButtonText()))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(
                             LinearGradient(
-                                colors: [colors.buttonGradientTop, colors.buttonGradientBottom],
+                                colors: [
+                                    Color(argb: DialogButtonTheme.shared.closeButtonGradientTop()),
+                                    Color(argb: DialogButtonTheme.shared.closeButtonGradientBottom()),
+                                ],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
                         )
                         .clipShape(Capsule())
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -81,9 +86,6 @@ private struct FullTeamDialogColors {
     let title: Color
     let description: Color
     let emphasisText: Color
-    let buttonGradientTop: Color
-    let buttonGradientBottom: Color
-    let buttonText: Color
 
     static func current(for colorScheme: ColorScheme) -> FullTeamDialogColors {
         if colorScheme == .dark {
@@ -91,10 +93,7 @@ private struct FullTeamDialogColors {
                 background: Color(red: 0.11, green: 0.11, blue: 0.118),
                 title: .white,
                 description: Color(red: 0.557, green: 0.557, blue: 0.576),
-                emphasisText: .white,
-                buttonGradientTop: Color(red: 0.922, green: 0.922, blue: 0.937),
-                buttonGradientBottom: Color(red: 0.820, green: 0.820, blue: 0.839),
-                buttonText: Color(red: 0.11, green: 0.11, blue: 0.118)
+                emphasisText: .white
             )
         }
 
@@ -102,10 +101,7 @@ private struct FullTeamDialogColors {
             background: Color(red: 0.949, green: 0.949, blue: 0.949),
             title: Color(red: 0.133, green: 0.133, blue: 0.133),
             description: Color(red: 0.4, green: 0.4, blue: 0.4),
-            emphasisText: Color(red: 0.267, green: 0.267, blue: 0.267),
-            buttonGradientTop: Color(red: 0.333, green: 0.333, blue: 0.333),
-            buttonGradientBottom: Color(red: 0.102, green: 0.102, blue: 0.102),
-            buttonText: .white
+            emphasisText: Color(red: 0.267, green: 0.267, blue: 0.267)
         )
     }
 }
