@@ -41,10 +41,12 @@ import com.davidnardie.pokemon.presentation.util.PokemonDetailFormatter
 import com.davidnardie.pokemon.presentation.util.TypeColors
 import org.jetbrains.compose.resources.painterResource
 import pokemonapp.sharedui.generated.resources.Res
+import pokemonapp.sharedui.generated.resources.ic_darkmode_back_arrow
 import pokemonapp.sharedui.generated.resources.ic_darkmode_height
 import pokemonapp.sharedui.generated.resources.ic_darkmode_moves
 import pokemonapp.sharedui.generated.resources.ic_darkmode_settings
 import pokemonapp.sharedui.generated.resources.ic_darkmode_weight
+import pokemonapp.sharedui.generated.resources.ic_lightmode_back_arrow
 import pokemonapp.sharedui.generated.resources.ic_lightmode_height
 import pokemonapp.sharedui.generated.resources.ic_lightmode_moves
 import pokemonapp.sharedui.generated.resources.ic_lightmode_settings
@@ -196,36 +198,55 @@ private fun DetailHeaderControls(
     isDarkTheme: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val buttonBackground = detailHeaderButtonBackground(isDarkTheme)
+
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DetailCircleButton(onClick = onBackClick) {
-            Text(
-                text = "‹",
-                color = Color.White,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Medium,
+        DetailCircleButton(
+            onClick = onBackClick,
+            backgroundColor = buttonBackground,
+        ) {
+            Icon(
+                painter = painterResource(
+                    if (isDarkTheme) Res.drawable.ic_darkmode_back_arrow
+                    else Res.drawable.ic_lightmode_back_arrow,
+                ),
+                contentDescription = "Back",
+                tint = Color.Unspecified,
+                modifier = Modifier.size(width = 8.dp, height = 14.dp),
             )
         }
 
-        DetailCircleButton(onClick = onSettingsClick) {
+        DetailCircleButton(
+            onClick = onSettingsClick,
+            backgroundColor = buttonBackground,
+        ) {
             Icon(
                 painter = painterResource(
                     if (isDarkTheme) Res.drawable.ic_darkmode_settings else Res.drawable.ic_lightmode_settings,
                 ),
                 contentDescription = "Settings",
-                tint = Color.White,
+                tint = Color.Unspecified,
                 modifier = Modifier.size(20.dp),
             )
         }
     }
 }
 
+private fun detailHeaderButtonBackground(isDarkTheme: Boolean): Color =
+    if (isDarkTheme) {
+        Color(0xFF1C1C1E).copy(alpha = 0.75f)
+    } else {
+        Color.White.copy(alpha = 0.9f)
+    }
+
 @Composable
 private fun DetailCircleButton(
     onClick: () -> Unit,
+    backgroundColor: Color,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
@@ -234,7 +255,7 @@ private fun DetailCircleButton(
         modifier = modifier
             .size(40.dp)
             .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.25f)),
+            .background(backgroundColor),
     ) {
         content()
     }
